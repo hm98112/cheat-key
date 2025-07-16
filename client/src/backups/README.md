@@ -1,12 +1,46 @@
-# React + Vite
+# Git
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+버젼 관리 시작
 
-Currently, two official plugins are available:
+```bash
+cd myproject(내프로젝트)
+git init
+```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+최초 버젼 생성
 
-## Expanding the ESLint configuration
+```bash
+git add . # 스테이지 업로드 (현재 경로에 있는 걸 전부)
+git commit -m "commitmessage" # 커밋(버젼) 생성
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+원격 저장소 추가
+
+```bash
+#git remote add 원격저장소별칭(origin) 원격저장소주소
+git remote  add origin https://github.com/소유자/저장소이름.git
+```
+
+원격 저장소 업로드(Push)
+
+```bash
+#git push 별칭(origin) 브랜치이름
+git push origin main
+```
+
+원격 저장소 복제(Clone)
+
+```bash
+# git clone 원격저장소주소
+git clone https://github.com/소유자/저장소이름.git
+
+```
+
+원격저장소 다운로드(Pull)
+
+```bash
+# git pull 별칭 브렌치이름
+git pull origin main
+```
+
+---
