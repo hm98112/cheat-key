@@ -1,0 +1,20 @@
+{
+  "name": "mynodeproject",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev:client": "Cd client && npm run dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ParkSSing-dev/MynodejsMemo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ParkSSing-dev/MynodejsMemo/issues"
+  },
+  "homepage": "https://github.com/ParkSSing-dev/MynodejsMemo#readme",
+  "description": ""
+}
