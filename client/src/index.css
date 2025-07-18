@@ -75,3 +75,26 @@
     transform: rotate(360deg);
   }
 }
+
+.not-found {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  padding: 100px 0;
+  gap: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+  border: 1px solid royalblue;
+}
+.not-found h1 {
+  color: crimson;
+  font-size: 80px;
+  font-weight: 900;
+  line-height: 1;
+  margin: 0;
+}
+.not-found a {
+  font-size: 30px;
+  color: green;
+}
