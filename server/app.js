@@ -84,5 +84,5 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 app.listen(3000, function () {
-  console.log('서버 3000번 포트로 열렸따이~')
+  console.log('3000번 포트로 서버가 열렸습니다.')
 })

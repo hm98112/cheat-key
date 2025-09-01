@@ -1,14 +1,3 @@
 {
-  "todos": [
-    {
-      "id": "6M24H_",
-      "text": "오전수업",
-      "done": true
-    },
-    {
-      "id": "QQUw1K",
-      "text": "점심먹기",
-      "done": false
-    }
-  ]
+  "todos": []
 }
