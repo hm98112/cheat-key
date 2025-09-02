@@ -1,199 +1,176 @@
-<!-- --- 프론트엔드 테스트 --- -->
+<!-- --- 프론트엔드 테스트트 --- -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>파스텔 대전 테트리스</title>
+    <title>대전 테트리스</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        /* --- CSS 전체 수정 --- */
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            background-color: #F8F4E3;
-            color: #5C5470;
-            font-family: 'Varela Round', sans-serif;
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .main-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background-color: #1a1a2e;
             display: flex;
             flex-direction: column;
-            align-items: center;
             justify-content: center;
-            height: 100vh;
-            margin: 0;
+            align-items: center;
+            overflow: hidden;
         }
-        h1 {
-            color: #BDB2FF;
-            font-size: 2.5em;
+
+        /* 중앙 컨텐츠 박스 */
+        .content-box {
+            background-color: rgba(26, 26, 46, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 30px; /* 패딩 조정 */
+            border-radius: 15px;
+            text-align: center;
+            color: white;
+            z-index: 10;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 95%; /* 너비를 %로 설정 */
+            max-width: 650px; /* 게임 컨테이너를 담기 위해 너비 확장 */
+        }
+
+        #status {
+            font-size: 1.5em;
             margin-bottom: 20px;
+            color: #e0e0e0;
+            height: 30px; /* 상태 메시지 높이 고정 */
         }
+        
         .game-container {
             display: flex;
-            gap: 30px;
+            gap: 20px;
+            justify-content: center; /* 중앙 정렬 */
             align-items: flex-start;
         }
+
         .player-area {
-            background-color: #FFFFFF;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
             text-align: center;
+            color: #ccc;
         }
+
         h2 {
             margin-top: 0;
             margin-bottom: 15px;
+            font-weight: 400;
         }
+
         canvas {
-            border: 2px solid #EAE6D7;
-            background-color: #FAF8F1;
+            border: 2px solid #4f4f8e; /* 테마에 맞는 보라색 계열 테두리 */
+            background-color: #0f0f1e; /* 캔버스 배경색 */
             border-radius: 8px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
         }
+
         .info {
-            background-color: #EAE6D7;
+            background-color: #0f0f1e;
+            border: 1px solid #4f4f8e;
             border-radius: 8px;
-            padding: 5px 15px;
+            padding: 8px 15px;
             margin-top: 15px;
-            font-size: 1.2em;
+            font-size: 1.1em;
             display: inline-block;
         }
     </style>
 </head>
 <body>
-
-    <h1 id="status">서버에 연결 중...</h1>
+    <!-- 요청하신 HTML 구조 적용 -->
+    <div class="main-container">
+        <div class="content-box">
+            <h1 id="status">서버에 연결 중...</h1>
     
-    <div class="game-container">
-        <div class="player-area">
-            <h2>나 (You)</h2>
-            <canvas id="player-board" width="240" height="480"></canvas>
-            <div class="info">점수: <span id="player-score">0</span></div>
-        </div>
-        <div class="player-area">
-            <h2>상대방 (Opponent)</h2>
-            <canvas id="opponent-board" width="240" height="480"></canvas>
-            <div class="info">점수: <span id="opponent-score">0</span></div>
+            <div class="game-container">
+                <div class="player-area">
+                    <h2>나 (You)</h2>
+                    <canvas id="player-board" width="240" height="480"></canvas>
+                    <div class="info">점수: <span id="player-score">0</span></div>
+                </div>
+                <div class="player-area">
+                    <h2>상대방 (Opponent)</h2>
+                    <canvas id="opponent-board" width="240" height="480"></canvas>
+                    <div class="info">점수: <span id="opponent-score">0</span></div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        // --- 프론트엔드 로직 ---
         const socket = io();
+        const COLS = 10, ROWS = 20, BLOCK_SIZE = 24;
+        const playerCanvas = document.getElementById('player-board'), playerCtx = playerCanvas.getContext('2d');
+        const opponentCanvas = document.getElementById('opponent-board'), opponentCtx = opponentCanvas.getContext('2d');
+        const statusEl = document.getElementById('status'), playerScoreEl = document.getElementById('player-score'), opponentScoreEl = document.getElementById('opponent-score');
+        const COLORS = [null, '#FFADAD', '#FFD6A5', '#FDFFB6', '#CAFFBF', '#9BF6FF', '#A0C4FF', '#BDB2FF', '#606060'];
+        const SHAPES = [[], [[1,1,1,1]], [[2,2],[2,2]], [[0,3,3],[3,3,0]], [[4,4,0],[0,4,4]], [[5,0,0],[5,5,5]], [[0,0,6],[6,6,6]], [[0,7,0],[7,7,7]]];
+        let room = null, board = createEmptyBoard(), player = null, score = 0, gameOver = false;
+        let lastTime = 0, dropCounter = 0, dropInterval = 1000;
 
-        const COLS = 10;
-        const ROWS = 20;
-        const BLOCK_SIZE = 24;
-
-        const playerCanvas = document.getElementById('player-board');
-        const playerCtx = playerCanvas.getContext('2d');
-        const opponentCanvas = document.getElementById('opponent-board');
-        const opponentCtx = opponentCanvas.getContext('2d');
-        
-        const statusEl = document.getElementById('status');
-        const playerScoreEl = document.getElementById('player-score');
-        const opponentScoreEl = document.getElementById('opponent-score');
-
-        const COLORS = [
-            null, '#FFADAD', '#FFD6A5', '#FDFFB6', '#CAFFBF', '#9BF6FF', '#A0C4FF', '#BDB2FF', '#E0E0E0'
-        ];
-        const SHAPES = [
-            [], [[1,1,1,1]], [[2,2],[2,2]], [[0,3,3],[3,3,0]], [[4,4,0],[0,4,4]],
-            [[5,0,0],[5,5,5]], [[0,0,6],[6,6,6]], [[0,7,0],[7,7,7]],
-        ];
-
-        let room = null;
-        let board = createEmptyBoard();
-        let player = null;
-        let score = 0;
-        let gameOver = false;
-        
-        let lastTime = 0;
-        let dropCounter = 0;
-        const dropInterval = 1000;
-
-        function createEmptyBoard() {
-            return Array.from({ length: ROWS }, () => Array(COLS).fill(0));
-        }
-
-        // --- 게임 로직 (수정 없음) ---
+        function createEmptyBoard() { return Array.from({ length: ROWS }, () => Array(COLS).fill(0)); }
         function resetPlayer() {
             const typeId = Math.floor(Math.random() * (SHAPES.length - 1)) + 1;
-            player = {
-                pos: { x: Math.floor(COLS / 2) - 1, y: 0 },
-                matrix: SHAPES[typeId],
-                typeId,
-            };
+            player = { pos: { x: Math.floor(COLS / 2) - 1, y: 0 }, matrix: SHAPES[typeId], typeId };
             if (isColliding(board, player)) {
                 gameOver = true;
                 socket.emit('gameOver', { room });
                 statusEl.textContent = '게임 오버! 당신이 졌습니다.';
             }
         }
-        
         function draw() {
             drawBoard(board, playerCtx);
-            if (player) {
-                drawMatrix(player.matrix, player.pos, playerCtx);
-            }
+            if (player) drawMatrix(player.matrix, player.pos, playerCtx);
         }
-
         function drawBoard(boardData, ctx) {
-            ctx.fillStyle = '#FAF8F1';
+            ctx.fillStyle = '#0f0f1e'; // 캔버스 배경색
             ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-
-            boardData.forEach((row, y) => {
-                row.forEach((value, x) => {
-                    if (value !== 0) {
-                        ctx.fillStyle = COLORS[value];
-                        ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
-                        ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-                        ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
-                    }
-                });
-            });
-        }
-        
-        function drawMatrix(matrix, offset, ctx) {
-            matrix.forEach((row, y) => {
-                row.forEach((value, x) => {
-                    if (value !== 0) {
-                        ctx.fillStyle = COLORS[value];
-                        ctx.fillRect((x + offset.x) * BLOCK_SIZE, (y + offset.y) * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
-                        ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-                        ctx.strokeRect((x + offset.x) * BLOCK_SIZE, (y + offset.y) * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
-                    }
-                });
-            });
-        }
-
-        function isColliding(board, player) {
-            for (let y = 0; y < player.matrix.length; y++) {
-                for (let x = 0; x < player.matrix[y].length; x++) {
-                    if (player.matrix[y][x] !== 0 &&
-                       (board[y + player.pos.y] && board[y + player.pos.y][x + player.pos.x]) !== 0) {
-                        return true;
-                    }
+            boardData.forEach((row, y) => row.forEach((value, x) => {
+                if (value !== 0) {
+                    ctx.fillStyle = COLORS[value];
+                    ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                    ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+                    ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
                 }
-            }
+            }));
+        }
+        function drawMatrix(matrix, offset, ctx) {
+            matrix.forEach((row, y) => row.forEach((value, x) => {
+                if (value !== 0) {
+                    ctx.fillStyle = COLORS[value];
+                    ctx.fillRect((x + offset.x) * BLOCK_SIZE, (y + offset.y) * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                    ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+                    ctx.strokeRect((x + offset.x) * BLOCK_SIZE, (y + offset.y) * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                }
+            }));
+        }
+        function isColliding(board, player) {
+            for (let y = 0; y < player.matrix.length; y++) for (let x = 0; x < player.matrix[y].length; x++)
+                if (player.matrix[y][x] !== 0 && (board[y + player.pos.y] && board[y + player.pos.y][x + player.pos.x]) !== 0) return true;
             return false;
         }
-
         function merge(board, player) {
-             player.matrix.forEach((row, y) => {
-                row.forEach((value, x) => {
-                    if (value !== 0) {
-                        board[y + player.pos.y][x + player.pos.x] = value;
-                    }
-                });
-            });
+            player.matrix.forEach((row, y) => row.forEach((value, x) => {
+                if (value !== 0) board[y + player.pos.y][x + player.pos.x] = value;
+            }));
         }
-        
         function clearLines() {
             let clearedLines = 0;
             outer: for (let y = board.length - 1; y >= 0; y--) {
-                for (let x = 0; x < board[y].length; x++) {
-                    if (board[y][x] === 0) {
-                        continue outer;
-                    }
-                }
+                for (let x = 0; x < board[y].length; x++) if (board[y][x] === 0) continue outer;
                 const row = board.splice(y, 1)[0].fill(0);
                 board.unshift(row);
                 y++;
@@ -205,40 +182,28 @@
                 socket.emit('lineClear', { lines: clearedLines, room });
             }
         }
-
         function addGarbageLines(count) {
             for (let i = 0; i < count; i++) {
                 const row = Array(COLS).fill(8);
-                const emptySpot = Math.floor(Math.random() * COLS);
-                row[emptySpot] = 0;
+                row[Math.floor(Math.random() * COLS)] = 0;
                 board.shift();
                 board.push(row);
             }
         }
-
         function update(time = 0) {
             if (gameOver) return;
-
             const deltaTime = time - lastTime;
             lastTime = time;
             dropCounter += deltaTime;
-
-            if (dropCounter > dropInterval) {
-                playerDrop();
-            }
-
+            if (dropCounter > dropInterval) playerDrop();
             draw();
             requestAnimationFrame(update);
         }
-
         function playerMove(dir) {
             if (gameOver) return;
             player.pos.x += dir;
-            if (isColliding(board, player)) {
-                player.pos.x -= dir;
-            }
+            if (isColliding(board, player)) player.pos.x -= dir;
         }
-
         function playerDrop() {
             if (gameOver) return;
             player.pos.y++;
@@ -250,72 +215,53 @@
             }
             dropCounter = 0;
         }
-        
         function playerRotate() {
             if (gameOver) return;
-            const originalMatrix = player.matrix;
+            const matrix = player.matrix;
             const rotated = [];
-            for (let y = 0; y < originalMatrix[0].length; y++) {
+            for (let y = 0; y < matrix[0].length; y++) {
                 const newRow = [];
-                for (let x = originalMatrix.length - 1; x >= 0; x--) {
-                    newRow.push(originalMatrix[x][y]);
-                }
+                for (let x = matrix.length - 1; x >= 0; x--) newRow.push(matrix[x][y]);
                 rotated.push(newRow);
             }
             player.matrix = rotated;
-            if (isColliding(board, player)) {
-                player.matrix = originalMatrix;
-            }
+            if (isColliding(board, player)) player.matrix = matrix;
         }
-        
-        document.addEventListener('keydown', event => {
-            if (player) {
-                if (event.key === 'ArrowLeft') playerMove(-1);
-                else if (event.key === 'ArrowRight') playerMove(1);
-                else if (event.key === 'ArrowDown') playerDrop();
-                else if (event.key === 'ArrowUp') playerRotate();
-            }
+        document.addEventListener('keydown', e => {
+            if (!player) return;
+            if (e.key === 'ArrowLeft') playerMove(-1);
+            else if (e.key === 'ArrowRight') playerMove(1);
+            else if (e.key === 'ArrowDown') playerDrop();
+            else if (e.key === 'ArrowUp') playerRotate();
         });
 
-        // --- 서버 통신 ---
-        socket.on('connect', () => {
-            statusEl.textContent = '연결 성공! 다른 플레이어를 기다리는 중...';
-        });
-
-        socket.on('waiting', () => {
-            statusEl.textContent = '다른 플레이어를 기다리는 중...';
-        });
-        
-        socket.on('gameStart', (data) => {
+        socket.on('connect', () => statusEl.textContent = '연결 성공! 다른 플레이어를 기다리는 중...');
+        socket.on('waiting', () => statusEl.textContent = '다른 플레이어를 기다리는 중...');
+        socket.on('gameStart', data => {
             room = data.room;
             statusEl.textContent = '게임 시작!';
             resetPlayer();
             update();
-
-            // 주기적으로 내 보드 상태와 점수를 서버로 전송
             setInterval(() => {
                 if (!gameOver) {
-                    // ✨ 문제 해결! : 이제 'board'와 'score'를 함께 보냅니다.
-                    socket.emit('boardState', { board, score, room });
+                    socket.emit('boardState', { board, score, player, room });
                 }
-            }, 100);
+            }, 50);
         });
         
         socket.on('opponentState', (opponentState) => {
-            // 서버로부터 받은 상대방의 'board'와 'score'를 모두 사용합니다.
-            opponentScoreEl.textContent = opponentState.score;
             drawBoard(opponentState.board, opponentCtx);
+            if (opponentState.player) {
+                drawMatrix(opponentState.player.matrix, opponentState.player.pos, opponentCtx);
+            }
+            opponentScoreEl.textContent = opponentState.score;
         });
 
-        socket.on('addGarbage', (count) => {
-            addGarbageLines(count);
-        });
-
+        socket.on('addGarbage', count => addGarbageLines(count));
         socket.on('opponentWin', () => {
             gameOver = true;
             statusEl.textContent = '승리했습니다!';
         });
-
     </script>
 </body>
 </html>
