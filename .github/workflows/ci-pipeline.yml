@@ -3,7 +3,7 @@ name: Build and Push Image to ACR (CI)
 # Github의 main 브랜치에 코드가 push될 때 워크플로우 실행
 on:
   push:
-    branches: [ main ]
+    branches: [ infra ]
 
 # 환경변수 정의 (워크플로우에서 사용할 환경변수)
 env:
