@@ -13,14 +13,48 @@
 
 /* 중앙 컨텐츠 박스 */
 .content-box {
-  background-color: rgba(26, 26, 46, 0.8); /* 반투명 배경 */
+  background-color: rgba(26, 26, 46, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 40px 60px;
+  /* 좌우 패딩을 60px -> 40px 로 줄여서 내부 공간 확보 */
+  padding: 40px 40px; 
   border-radius: 15px;
   text-align: center;
   color: white;
   z-index: 10;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  width: 90%; /* 너비를 %로 설정 */
+  max-width: 420px; /* 최대 너비를 살짝 늘림 */
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column; /* 명확한 상하 배치 */
+  width: 100%;
+  gap: 20px; /* 입력 칸 사이의 간격을 넓혀 더 여유롭게 배치 */
+}
+
+.auth-input {
+  width: 100%;
+  /* 입력 칸 내부 세로 여백을 늘려 더 크게 보이도록 수정 */
+  padding: 18px 15px; 
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.2);
+  color: white;
+  /* 폰트 크기를 키워 가독성 향상 */
+  font-size: 1.1rem; 
+  box-sizing: border-box;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.auth-input::placeholder {
+  color: #a0a0c0;
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: #00aaff;
+  box-shadow: 0 0 10px rgba(0, 170, 255, 0.5);
 }
 
 .title {
@@ -67,6 +101,22 @@
 .main-button:hover {
   transform: translateY(-3px);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.form-button-group {
+  display: flex;
+  gap: 15px; /* 버튼 사이의 간격 */
+  margin-top: 15px;
+}
+
+/* 보조 버튼 (메인 화면) 스타일 */
+.main-button.secondary {
+  background-color: #6c757d; /* 차분한 회색 계열 */
+  color: white;
+}
+
+.main-button.secondary:hover {
+  background-color: #5a6268;
 }
 
 /* 배경 애니메이션 스타일 */
@@ -155,7 +205,7 @@
 .shape:nth-child(4) { left: 40%; animation-duration: 14s; animation-delay: 3s; }
 .shape:nth-child(5) { left: 50%; animation-duration: 16s; animation-delay: 1s; }
 .shape:nth-child(6) { left: 60%; animation-duration: 11s; animation-delay: 4s; }
-.shape:nth-child(7) { left: 70%; animation-duration: 19s; animation-delay: 2s; }
+.shape:nth-child(7) { left: 65%; animation-duration: 19s; animation-delay: 2s; }
 .shape:nth-child(8) { left: 80%; animation-duration: 13s; animation-delay: 5s; }
 .shape:nth-child(9) { left: 90%; animation-duration: 17s; animation-delay: 3s; }
 .shape:nth-child(10) { left: 5%; animation-duration: 15s; animation-delay: 6s; }
@@ -164,3 +214,9 @@
 .shape:nth-child(13) { left: 35%; animation-duration: 14s; animation-delay: 9s; }
 .shape:nth-child(14) { left: 45%; animation-duration: 16s; animation-delay: 10s; }
 .shape:nth-child(15) { left: 55%; animation-duration: 11s; animation-delay: 11s; }
+.shape:nth-child(16) { left: 25%; animation-duration: 20s; animation-delay: 12s; }
+.shape:nth-child(17) { left: 55%; animation-duration: 11s; animation-delay: 13s; }
+.shape:nth-child(18) { left: 75%; animation-duration: 15s; animation-delay: 14s; }
+.shape:nth-child(19) { left: 35%; animation-duration: 10s; animation-delay: 15s; }
+.shape:nth-child(20) { left: 85%; animation-duration: 13s; animation-delay: 16s; }
+

@@ -1,76 +1,133 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { React, useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './pages.css';
+
+const SHAPES = ['l-shape', 'square-shape', 'n-shape', 'i-shape'];
+  const MAX_SHAPES = 10;
+  const Tetrominoes = () => {
+    const [shapeList, setShapeList] = useState([]);
+    const intervalRef = useRef(null);
+    const countRef = useRef(0);
+  
+    useEffect(() => {
+      function addShape() {
+        setShapeList(prev => {
+          if (prev.length >= MAX_SHAPES) {
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current);
+              intervalRef.current = null;
+            }
+            return prev;
+          }
+          // 무조건 1개만 추가
+          const shapeType = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+          const left = `${Math.random() * 90}%`;
+          const delay = `0s`;
+          countRef.current++;
+          return [
+            ...prev,
+            { type: shapeType, left, delay, key: `${shapeType}-${Date.now()}-${countRef.current}` }
+          ];
+        });
+      }
+      // interval은 오직 한 번만 생성
+      intervalRef.current = setInterval(addShape, 1200);
+      return () => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      };
+    }, []);
+  
+    // 애니메이션이 끝난 도형 제거 및 interval 재시작 방지
+    const handleAnimationEnd = key => {
+    setShapeList(prev => prev.filter(shape => shape.key !== key));
+    };
+  
+    return (
+      <div className="tetris-shapes">
+        {shapeList.map(({ type, left, delay, key }) => (
+          <div
+            key={key}
+            className={`shape ${type}`}
+            style={{ left, animationDelay: delay }}
+            onAnimationEnd={() => handleAnimationEnd(key)}
+          />
+        ))}
+      </div>
+    );
+  };
 
 const SignupPage = () => {
+  const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (password!== confirmPassword) {
-      alert('비밀번호가 일치하지 않습니다.');
-      return;
-    }
-    console.log('회원가입 시도:', { email, username, password });
-    // 여기에 실제 API 호출 로직을 추가합니다.
-    // 예: api.register(email, username, password)
-    //     .then(response => { /* 회원가입 성공 처리 */ })
-    //     .catch(error => { /* 에러 처리 */ });
+    setError('');
+    console.log('회원가입 시도:', { nickname, email, password });
   };
 
   return (
-    
-    <form onSubmit={handleSubmit} className="auth-form">
-        <Link to="/">
-                <button>메인화면</button>
-        </Link>
-      <div className="input-group">
-        
-        <label htmlFor="signup-email">이메일</label>
-        <input
-          id="signup-email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+    <div className="main-container">
+      <Tetrominoes />
+      <div className="content-box">
+        <h2 className="form-title">회원가입</h2>
+        <form onSubmit={handleSubmit} className="auth-form">
+          <input
+            type="text"
+            placeholder="닉네임"
+            className="auth-input"
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            required
+          />
+          <input
+            type="email"
+            placeholder="이메일"
+            className="auth-input"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="비밀번호"
+            className="auth-input"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={8}
+          />
+          {error && <p className="error-message">{error}</p>}
+
+          {/* 버튼 그룹 */}
+          <div className="form-button-group">
+            <button type="submit" className="main-button signup">
+              가입하기
+            </button>
+            <button
+              type="button"
+              className="main-button secondary"
+              onClick={() => navigate('/')}
+            >
+              메인 화면
+            </button>
+          </div>
+
+        </form>
+        <p className="switch-link">
+          이미 계정이 있으신가요?{' '}
+          <a href="#" onClick={() => navigate('/signin')}>
+            로그인
+          </a>
+        </p>
       </div>
-      <div className="input-group">
-        <label htmlFor="signup-username">사용자 이름</label>
-        <input
-          id="signup-username"
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
-      </div>
-      <div className="input-group">
-        <label htmlFor="signup-password">비밀번호</label>
-        <input
-          id="signup-password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-      </div>
-      <div className="input-group">
-        <label htmlFor="signup-confirm-password">비밀번호 확인</label>
-        <input
-          id="signup-confirm-password"
-          type="password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          required
-        />
-      </div>
-      <button type="submit" className="submit-btn">
-        회원가입
-      </button>
-    </form>
+    </div>
   );
 };
 
