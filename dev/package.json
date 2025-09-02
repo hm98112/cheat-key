@@ -1,0 +1,13 @@
+{
+  "name": "competitive-tetris-mvp",
+  "version": "1.0.0",
+  "description": "실시간 대전 테트리스 게임 프로젝트 MVP",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  }
+}
