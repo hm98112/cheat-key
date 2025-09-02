@@ -1,39 +1,34 @@
 {
   "name": "front-end",
-  "version": "1.0.0",
-  "description": "",
-  "keywords": [],
-  "homepage": "https://github.com/ParkSSing-dev/MynodejsMemo#readme",
-  "bugs": {
-    "url": "https://github.com/ParkSSing-dev/MynodejsMemo/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ParkSSing-dev/MynodejsMemo.git"
-  },
-  "license": "ISC",
-  "author": "",
-  "type": "commonjs",
-  "main": "index.js",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
   "scripts": {
-    "dev:client": "cd client && npm run dev",
-    "dev:server": "cd server && npm run dev",
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "build:client": "cd client && npm run build",
-    "build:server": "cd server && npm run build",
-    "build": "npm run build:client && npm run build:server"
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "concurrently": "^9.2.0",
-    "cross-env": "^7.0.3",
-    "lodash": "^4.17.21",
-    "react": "^19.1.1"
+    "axios": "^1.11.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-router-dom": "^7.8.2",
+    "styled-components": "^6.1.19",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@eslint/js": "^9.33.0",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.21",
-    "eslint": "^9.34.0",
+    "eslint": "^9.33.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.3.0",
     "postcss": "^8.5.6",
-    "prettier": "^3.6.2",
-    "tailwindcss": "^4.1.12"
+    "tailwindcss": "^4.1.12",
+    "vite": "^7.1.2"
   }
 }
