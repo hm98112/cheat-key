@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './pages.css';
 
 // 배경에 흩날릴 테트리스 블록 모양들 (하나씩 등장)
-const SHAPES = ['l-shape', 'square-shape', 'n-shape', 'i-shape'];
+const SHAPES = ['l-shape', 'square-shape', 'n-shape', 'i-shape', 't-shape'];
 const MAX_SHAPES = 10;
 const Tetrominoes = () => {
   const [shapeList, setShapeList] = useState([]);

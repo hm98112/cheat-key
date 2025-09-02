@@ -134,6 +134,39 @@
   opacity: 1;
 }
 
+.t-shape {
+  width: 120px; /* 블록 3개 가로 길이: 40px * 3 = 120px */
+  height: 80px;  /* 블록 2개 세로 길이: 40px * 2 = 80px */
+  background: none;
+  position: absolute;
+}
+
+.t-shape::before,
+.t-shape::after {
+  content: '';
+  position: absolute;
+  /* 이미지와 유사한 파란색 계열의 배경색으로 변경했습니다. */
+  background-color: rgb(142, 4, 147); 
+  /* 테트리스 블록처럼 보이도록 살짝 볼록한 효과를 추가했습니다. */
+  box-sizing: border-box; /* padding과 border가 width/height에 포함되도록 */
+}
+
+/* 윗부분 블록 (1x1) */
+.t-shape::before {
+  width: 40px;
+  height: 40px;
+  left: 40px; /* 전체 너비 120px 중 중앙 (120/2 - 40/2 = 40) */
+  top: 0;
+}
+
+/* 아랫부분 가로 막대 (3x1) */
+.t-shape::after {
+  width: 120px; /* 40px * 3칸 */
+  height: 40px;
+  left: 0;
+  top: 40px; /* 윗부분 블록 바로 아래 */
+}
+
 .l-shape {
   width: 80px;
   height: 40px;
@@ -144,7 +177,7 @@
 .l-shape::after {
   content: '';
   position: absolute;
-  background-color: rgba(242, 255, 4, 0.967);
+  background-color: rgba(6, 193, 245, 0.967);
 }
 .l-shape::before {
   width: 40px; height: 80px; left: 0; top: 0;
@@ -156,7 +189,7 @@
 .square-shape {
   width: 80px;
   height: 80px;
-  background-color: rgba(89, 228, 14, 0.86);
+  background-color: rgba(228, 142, 14, 0.992);
   position: absolute;
 }
 
@@ -170,7 +203,7 @@
 .n-shape::after {
   content: '';
   position: absolute;
-  background-color: rgba(242, 7, 38, 0.614);
+  background-color: rgba(27, 242, 7, 0.964);
 }
 .n-shape::before {
   width: 40px; height: 80px; left: 0; top: 0;
@@ -182,7 +215,7 @@
 .i-shape {
   width: 40px;
   height: 160px;
-  background-color: rgba(30, 4, 220, 0.871);
+  background-color: rgba(241, 13, 13, 0.871);
   position: absolute;
 }
 

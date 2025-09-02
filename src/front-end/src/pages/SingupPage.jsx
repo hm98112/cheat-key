@@ -2,7 +2,7 @@ import { React, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './pages.css';
 
-const SHAPES = ['l-shape', 'square-shape', 'n-shape', 'i-shape'];
+const SHAPES = ['l-shape', 'square-shape', 'n-shape', 'i-shape', 't-shape'];
   const MAX_SHAPES = 10;
   const Tetrominoes = () => {
     const [shapeList, setShapeList] = useState([]);
