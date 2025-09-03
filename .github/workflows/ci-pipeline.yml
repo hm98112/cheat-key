@@ -1,4 +1,4 @@
-# Test
+# Test 2
 name: Build and Push Image to ACR (CI)
 
 # Github의 infra 브랜치에 코드가 push될 때 워크플로우 실행 (테스트)
