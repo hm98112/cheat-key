@@ -11,6 +11,9 @@ const io = socketIo(server);
 
 const PORT = process.env.PORT || 3000;
 
+app.get('/healthz', (req, res) => {
+    res.status(200).send('OK');
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
 let gameRooms = {};
