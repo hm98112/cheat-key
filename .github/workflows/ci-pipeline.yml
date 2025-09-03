@@ -41,8 +41,7 @@ jobs:
       # 4. Dockerfile로 이미지 build
       - name: Build Docker image
         run: |
-          docker build . \
-            -f Dockerfile \
+          docker build ./dev \
             -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_REPOSITORY }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
 
       # 5. 빌드된 Docker 이미지를 ACR로 push
