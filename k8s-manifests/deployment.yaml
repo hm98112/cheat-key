@@ -17,7 +17,7 @@ spec:
       containers:
       - name: tetris-container
         # CI 파이프라인이 ACR에 올린 통합(프론트/백) 이미지를 사용
-        image: tetrisgameacr.azurecr.io/tetris-app:1.0.4
+        image: tetrisgameacr.azurecr.io/tetris-app:1.0.3
         ports:
         # server.js가 사용하는 3000번 포트 하나만 열면 됨
         - containerPort: 3000
