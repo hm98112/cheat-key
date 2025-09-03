@@ -253,3 +253,116 @@
 .shape:nth-child(19) { left: 35%; animation-duration: 10s; animation-delay: 15s; }
 .shape:nth-child(20) { left: 85%; animation-duration: 13s; animation-delay: 16s; }
 
+/* --- 로비 페이지 (LobbyPage.jsx) 스타일 --- */
+.lobby-content, .matching-content {
+  text-align: center;
+}
+
+.tetris-image {
+  width: 100%;
+  max-width: 300px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.matching-text {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #e0e0e0;
+}
+
+.wait-time-text {
+  font-size: 1rem;
+  color: #b0b0d0;
+  margin-top: 10px;
+}
+
+/* --- 우측 상단 유저 정보 스타일 --- */
+.top-right-user-info {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  z-index: 20;
+}
+
+.nickname {
+  color: white;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.logout-button {
+  background-color: transparent;
+  border: 1px solid #6c757d;
+  color: #e0e0e0;
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.logout-button:hover {
+  background-color: #6c757d;
+  color: white;
+}
+
+/* --- 로그아웃 모달 (LogoutModal.jsx) 스타일 --- */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7); /* 어두운 배경 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  /* 기존 content-box 스타일을 상속받아 사용 */
+  width: 90%;
+  max-width: 400px;
+}
+
+.modal-text {
+  font-size: 1.2rem;
+  color: #e0e0e0;
+  margin-bottom: 30px;
+}
+
+.not-found {
+  position: relative; /* 자식 요소의 position 기준이 되도록 변경 */
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  background-color: #1a1a2e;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  font-family: 'Arial', sans-serif;
+}
+
+.not-found-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  z-index: 10; /* 배경 애니메이션(z-index: 1) 위에 오도록 설정 */
+  color: white;
+  text-align: center;
+}
+
+.not-found-content h1 {
+  color: crimson;
+  font-size: 5rem; /* rem 단위로 변경하여 반응성 개선 */
+  font-weight: 800;
+  line-height: 1;
+  margin: 0;
+  text-shadow: 0 0 15px rgba(220, 20, 60, 0.7);
+}

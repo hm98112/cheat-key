@@ -1,63 +1,7 @@
 import { React, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import TetrisAnimation from '@/components/TetrisAnimation';
 import './pages.css';
-
-const SHAPES = ['l-shape', 'square-shape', 'n-shape', 'i-shape', 't-shape'];
-  const MAX_SHAPES = 10;
-  const Tetrominoes = () => {
-    const [shapeList, setShapeList] = useState([]);
-    const intervalRef = useRef(null);
-    const countRef = useRef(0);
-  
-    useEffect(() => {
-      function addShape() {
-        setShapeList(prev => {
-          if (prev.length >= MAX_SHAPES) {
-            if (intervalRef.current) {
-              clearInterval(intervalRef.current);
-              intervalRef.current = null;
-            }
-            return prev;
-          }
-          // 무조건 1개만 추가
-          const shapeType = SHAPES[Math.floor(Math.random() * SHAPES.length)];
-          const left = `${Math.random() * 90}%`;
-          const delay = `0s`;
-          countRef.current++;
-          return [
-            ...prev,
-            { type: shapeType, left, delay, key: `${shapeType}-${Date.now()}-${countRef.current}` }
-          ];
-        });
-      }
-      // interval은 오직 한 번만 생성
-      intervalRef.current = setInterval(addShape, 1200);
-      return () => {
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-      };
-    }, []);
-  
-    // 애니메이션이 끝난 도형 제거 및 interval 재시작 방지
-    const handleAnimationEnd = key => {
-    setShapeList(prev => prev.filter(shape => shape.key !== key));
-    };
-  
-    return (
-      <div className="tetris-shapes">
-        {shapeList.map(({ type, left, delay, key }) => (
-          <div
-            key={key}
-            className={`shape ${type}`}
-            style={{ left, animationDelay: delay }}
-            onAnimationEnd={() => handleAnimationEnd(key)}
-          />
-        ))}
-      </div>
-    );
-  };
 
 const SignupPage = () => {
   const [nickname, setNickname] = useState('');
@@ -74,7 +18,7 @@ const SignupPage = () => {
 
   return (
     <div className="main-container">
-      <Tetrominoes />
+      <TetrisAnimation />
       <div className="content-box">
         <h2 className="form-title">회원가입</h2>
         <form onSubmit={handleSubmit} className="auth-form">
