@@ -24,7 +24,7 @@ const SignupPage = () => {
       console.log(response);
 
       // 성공 시 0.4초 후 로그인 페이지로 이동
-      setTimeout(() => navigate('/signin'), 4000);
+      setTimeout(() => navigate('/signin'), 400);
 
     } catch (error) {
       const errorMessage = error.response?.data?.message || '회원가입 실패. 입력 정보를 확인해 주세요.';
