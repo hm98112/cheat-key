@@ -1,13 +1,14 @@
 name: Build and Push Image to ACR (CI)
 
-# Github의 main 브랜치에 코드가 push될 때 워크플로우 실행
+# Github의 infra 브랜치에 코드가 push될 때 워크플로우 실행 (테스트)
+# 테스트가 끝나면 main 브랜치에 push될 때마다 실행되도록 수정할 예정입니다!
 on:
   push:
     branches: [ infra ]
 
 # 환경변수 정의 (워크플로우에서 사용할 환경변수)
 env:
-  ACR_NAME: acr-mytetrisgame
+  ACR_NAME: tetrisgameacr
   IMAGE_REPOSITORY: tetris-app
 jobs:
   # ci 라는 이름의 작업 정의
