@@ -70,4 +70,3 @@ jobs:
       - name: Commit and push manifest changes
         run: |
           git diff --quiet || (git commit -am "chore(ci): Update image tag to ${{ steps.set-image-tag.outputs.IMAGE_TAG }}" && git push)
-```
