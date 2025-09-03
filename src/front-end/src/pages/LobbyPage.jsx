@@ -11,12 +11,11 @@ const LobbyPage = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
   
-  // 실제로는 로그인 시 받아온 닉네임을 사용해야 합니다.
-  const nickname = "테트리스고수"; 
+  // localStorage에서 로그인 시 저장한 username을 가져옵니다.
+  const nickname = localStorage.getItem('username') || "게스트"; 
 
   const handleMatchingClick = () => {
     setIsMatching(true);
-    // 10초에서 5분(300초) 사이의 랜덤 시간 계산
     const randomSeconds = Math.floor(Math.random() * (300 - 10 + 1)) + 10;
     const minutes = Math.floor(randomSeconds / 60);
     const seconds = randomSeconds % 60;
@@ -29,7 +28,9 @@ const LobbyPage = () => {
   };
 
   const handleLogout = () => {
-    // 로그아웃 로직 실행 후 메인 페이지로 이동
+    // 로그아웃 시 localStorage의 정보를 삭제합니다.
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('username');
     console.log("로그아웃 되었습니다.");
     navigate('/');
   };
@@ -37,14 +38,12 @@ const LobbyPage = () => {
   return (
     <div className="main-container">
       <TetrisAnimation />
-      {/* 우측 상단 닉네임 및 로그아웃 버튼 */}
       <div className="top-right-user-info">
         <span className="nickname">{nickname}</span>
         <button className="logout-button" onClick={() => setShowLogoutModal(true)}>
           로그아웃
         </button>
       </div>
-
       <div className="content-box">
         {isMatching ? (
           <div className="matching-content">
@@ -54,7 +53,6 @@ const LobbyPage = () => {
           </div>
         ) : (
           <div className="lobby-content">
-            {/*  */}
             <img 
               src="https://i.imgur.com/3Z6kY9r.png" 
               alt="테트리스 플레이 이미지" 
@@ -66,8 +64,6 @@ const LobbyPage = () => {
           </div>
         )}
       </div>
-
-      {/* 로그아웃 모달 */}
       {showLogoutModal && (
         <LogoutModal
           onConfirm={handleLogout}
