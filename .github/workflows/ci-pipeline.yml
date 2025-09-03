@@ -35,7 +35,8 @@ jobs:
         uses: azure/docker-login@v1
         with:
           login-server: ${{ env.ACR_NAME }}.azurecr.io
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          username: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
+          password: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}
 
       # 4. Dockerfile로 이미지 build
       - name: Build Docker image
@@ -48,3 +49,4 @@ jobs:
       - name: Push Docker image to ACR
         run: |
           docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_REPOSITORY }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
+
