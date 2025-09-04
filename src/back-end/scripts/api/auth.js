@@ -7,22 +7,29 @@ const router = express.Router();
 
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
-  const { username, password } = req.body;
+  const { identifier, password } = req.body;
 
   // 1. 요청 데이터 유효성 검사
-  if (!username || !password) {
-    return res.status(400).json({ message: 'Username and password are required.' });
+  if (!identifier || !password) {
+    return res.status(400).json({ message: 'identifier and password are required.' });
   }
 
   try {
-    // 2. 데이터베이스에서 사용자 정보 조회
-    const query = 'SELECT * FROM users WHERE username = $1';
-    const { rows } = await db.query(query, [username]);
+    // 2. 데이터베이스에서 사용자 정보 
+    
+    // 👇 isEmail 변수를 먼저 정의합니다.
+    const isEmail = identifier.includes('@');
+    
+    const query = isEmail
+      ? 'SELECT * FROM users WHERE email = $1'
+      : 'SELECT * FROM users WHERE username = $1';
+    
+    const { rows } = await db.query(query, [identifier]);
     
     // 사용자가 존재하지 않는 경우
     if (rows.length === 0) {
       // 보안을 위해 "존재하지 않는 사용자"라는 메시지 대신 "자격 증명 실패"로 통일하는 것이 좋음
-      return res.status(401).json({ message: 'Invalid credentials.' });
+      return res.status(401).json({ message: '로그인에 실패했습니다. 아이디, 비밀번호를 확인하세요.' });
     }
 
     const user = rows[0];
@@ -32,7 +39,7 @@ router.post('/login', async (req, res) => {
 
     // 비밀번호가 일치하지 않는 경우
     if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid credentials.' });
+      return res.status(401).json({ message: '로그인에 실패했습니다. 아이디, 비밀번호를 확인하세요.' });
     }
 
     // 4. JWT(Access Token) 생성
@@ -53,6 +60,7 @@ router.post('/login', async (req, res) => {
     res.status(200).json({
       message: 'Login successful!',
       accessToken,
+      username: user.username, // 로그인한 사용자의 닉네임을 응답에 추가
     });
 
   } catch (error) {

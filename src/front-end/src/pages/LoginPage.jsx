@@ -1,45 +1,38 @@
-import { React, useState } from 'react';
+import React, { useState } from 'react'; // Unused imports removed
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import TetrisAnimation from '@/components/TetrisAnimation';
 import './pages.css';
-
-// 백엔드 서버 주소
-const API_BASE_URL = 'http://localhost:8080';
+import TetrisAnimation from '@/components/TetrisAnimation';
+import { login } from '../api/auth';
 
 const LoginPage = () => {
-  const [username, setUsername] = useState(''); // 'email' -> 'username'으로 변경
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [isError, setIsError] = useState(false); // For styling the message
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setMessage('');
+    setIsError(false); // Reset error state
+    setIsLoading(true);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
-        username: username,
-        password: password,
-      });
+      const responseData = await login(identifier, password);
+      setMessage('로그인 성공! 메인 화면으로 이동합니다.');
+      
+      localStorage.setItem('accessToken', responseData.accessToken);
+      localStorage.setItem('username', responseData.username);
 
-      if (response.status === 200 && response.data.accessToken) {
-        const { accessToken } = response.data;
+      setTimeout(() => navigate('/lobby'), 1500);
 
-        // 토큰과 함께 입력한 사용자 이름도 localStorage에 저장
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('username', username);
-
-        // 로비 페이지로 이동
-        navigate('/lobby');
-      }
-    } catch (err) {
-      if (err.response && err.response.status === 401) {
-        setError('사용자 이름 또는 비밀번호가 올바르지 않습니다.');
-      } else {
-        setError('로그인 중 오류가 발생했습니다.');
-      }
-      console.error("로그인 실패:", err);
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || '로그인 실패. 아이디 또는 비밀번호를 확인해 주세요.';
+      setMessage(errorMessage);
+      setIsError(true); // Mark the message as an error
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -50,11 +43,11 @@ const LoginPage = () => {
         <h2 className="form-title">로그인</h2>
         <form onSubmit={handleSubmit} className="auth-form">
           <input
-            type="text" // 'email' -> 'text'
-            placeholder="사용자 이름" // '이메일' -> '사용자 이름'
+            type="text"
+            placeholder="닉네임 또는 이메일"
             className="auth-input"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
             required
           />
           <input
@@ -65,16 +58,23 @@ const LoginPage = () => {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          {error && <p className="error-message">{error}</p>}
           
+          {/* 👇 'error'를 'message'로 수정하고, isError 상태에 따라 클래스를 동적으로 변경합니다. */}
+          {message && (
+            <p className={isError ? 'error-message' : 'success-message'}>
+              {message}
+            </p>
+          )}
+
           <div className="form-button-group">
-            <button type="submit" className="main-button login">
-              로그인
+            <button type="submit" className="main-button login" disabled={isLoading}>
+              {isLoading ? '로그인 중...' : '로그인'}
             </button>
             <button
               type="button"
               className="main-button secondary"
               onClick={() => navigate('/')}
+              disabled={isLoading}
             >
               메인 화면
             </button>
@@ -82,7 +82,7 @@ const LoginPage = () => {
         </form>
         <p className="switch-link">
           계정이 없으신가요?{' '}
-          <a href="#" onClick={() => navigate('/signup')}>
+          <a href="/signup" onClick={(e) => { e.preventDefault(); navigate('/signup'); }}>
             회원가입
           </a>
         </p>

@@ -6,11 +6,11 @@ const router = express.Router();
 
 // POST /api/users/signup
 router.post('/signup', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, email, password } = req.body;
 
   // 1. 요청 데이터 유효성 검사
-  if (!username || !password) {
-    return res.status(400).json({ message: 'Username and password are required.' });
+  if (!username || !email || !password) {
+    return res.status(400).json({ message: 'Username, email, and password are required.' });
   }
 
   try {
@@ -21,11 +21,11 @@ router.post('/signup', async (req, res) => {
 
     // 3. 데이터베이스에 새로운 사용자 정보 저장
     const query = `
-      INSERT INTO users (username, password_hash)
-      VALUES ($1, $2)
+      INSERT INTO users (username, email, password_hash)
+      VALUES ($1, $2, $3)
       RETURNING user_id, username, created_at;
     `;
-    const values = [username, hashedPassword];
+    const values = [username, email, hashedPassword];
 
     const { rows } = await db.query(query, values);
     const newUser = rows[0];
@@ -38,6 +38,7 @@ router.post('/signup', async (req, res) => {
       user: {
         userId: newUser.user_id,
         username: newUser.username,
+        email: email,
         createdAt: newUser.created_at,
       },
     });
@@ -56,3 +57,4 @@ router.post('/signup', async (req, res) => {
 });
 
 module.exports = router;
+
