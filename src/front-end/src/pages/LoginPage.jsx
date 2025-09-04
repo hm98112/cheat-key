@@ -24,7 +24,7 @@ const LoginPage = () => {
       
       localStorage.setItem('accessToken', responseData.accessToken);
 
-      setTimeout(() => navigate('/lobby'), 1500);
+      setTimeout(() => navigate('/lobby'), 400);
 
     } catch (error) {
       const errorMessage = error.response?.data?.message || '로그인 실패. 아이디 또는 비밀번호를 확인해 주세요.';

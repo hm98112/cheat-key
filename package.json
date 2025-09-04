@@ -1,0 +1,14 @@
+{
+  "name": "cheat-key-monorepo",
+  "version": "1.0.0",
+  "description": "Root controller for the cheat-key project",
+  "private": true,
+  "scripts": {
+    "dev:frontend": "cd src/front-end && npm run dev",
+    "dev:backend": "cd src/back-end && npm run dev",
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
