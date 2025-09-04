@@ -1,37 +1,35 @@
-import { React, useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react'; // Unused imports removed
 import { useNavigate } from 'react-router-dom';
 import './pages.css';
 import TetrisAnimation from '@/components/TetrisAnimation';
-import { login } from '../api/auth'; // Canvas의 auth.js 파일에서 login 함수를 가져옵니다.
+import { login } from '../api/auth';
 
 const LoginPage = () => {
-  const [identifier, setIdentifier] = useState(''); // 닉네임 또는 이메일
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const [isError, setIsError] = useState(false); // For styling the message
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
+    setIsError(false); // Reset error state
     setIsLoading(true);
 
     try {
-      // 1. auth.js의 login 함수를 호출하여 API 요청을 보냅니다.
       const responseData = await login(identifier, password);
       setMessage('로그인 성공! 메인 화면으로 이동합니다.');
-
-      // 2. 서버로부터 받은 accessToken을 localStorage에 저장합니다.
-      // (실제 프로덕션에서는 보안을 위해 HttpOnly 쿠키나 상태 관리 라이브러리를 사용하는 것이 더 좋습니다.)
+      
       localStorage.setItem('accessToken', responseData.accessToken);
 
-      // 3. 성공 시 1.5초 후 메인 페이지로 이동합니다.
-      setTimeout(() => navigate('/'), 1500);
+      setTimeout(() => navigate('/lobby'), 1500);
 
     } catch (error) {
       const errorMessage = error.response?.data?.message || '로그인 실패. 아이디 또는 비밀번호를 확인해 주세요.';
       setMessage(errorMessage);
+      setIsError(true); // Mark the message as an error
     } finally {
       setIsLoading(false);
     }
@@ -60,9 +58,13 @@ const LoginPage = () => {
             required
           />
           
+          {/* 👇 'error'를 'message'로 수정하고, isError 상태에 따라 클래스를 동적으로 변경합니다. */}
+          {message && (
+            <p className={isError ? 'error-message' : 'success-message'}>
+              {message}
+            </p>
+          )}
 
-
-          {/* 버튼 그룹 */}
           <div className="form-button-group">
             <button type="submit" className="main-button login" disabled={isLoading}>
               {isLoading ? '로그인 중...' : '로그인'}
@@ -76,7 +78,6 @@ const LoginPage = () => {
               메인 화면
             </button>
           </div>
-
         </form>
         <p className="switch-link">
           계정이 없으신가요?{' '}
@@ -90,3 +91,4 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
+
