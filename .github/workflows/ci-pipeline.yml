@@ -1,4 +1,4 @@
-# Test
+# Workflow 이름
 name: Build and Push Image to ACR (CI)
 
 # Github의 infra 브랜치에 코드가 push될 때 워크플로우 실행
@@ -6,7 +6,7 @@ on:
   push:
     branches: [ infra ]
 
-# ✨ 워크플로우가 Git에 다시 Push할 수 있도록 권한을 부여
+# 워크플로우가 Git에 다시 Push할 수 있도록 권한 부여
 permissions:
   contents: write
 
