@@ -48,7 +48,7 @@ router.post('/login', async (req, res) => {
     
     // 1. JWT 비밀키는 .env 파일에 저장하고 관리해야 함
     const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: '15m', // 토큰 유효 기간 (예: 1시간)
+      expiresIn: '15m', 
     });
     // 2. Refresh Token 발급 (유효기간: 7일)
     const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });

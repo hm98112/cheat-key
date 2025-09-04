@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext'; // ⭐ AuthContext를 가져옵니다.
 import Loader from '@/components/Loader.jsx';
 import LogoutModal from '@/components/LogoutModal.jsx';
 import TetrisAnimation from '@/components/TetrisAnimation';
-import TetrisPlayImage from '../components/TetrisPlayImage'; // TetrisPlayImage 컴포넌트를 임포트합니다.
+import TetrisPlayImage from '../components/TetrisPlayImage';
 import './pages.css';
 
 const LobbyPage = () => {
@@ -11,10 +12,10 @@ const LobbyPage = () => {
   const [estimatedTime, setEstimatedTime] = useState('');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
+  const auth = useAuth(); // ⭐ AuthContext의 기능을 사용합니다.
 
   const nickname = localStorage.getItem('username') || "게스트";
 
-  // '매칭하기' 버튼 클릭 시 실행될 함수
   const handleMatchingClick = () => {
     setIsMatching(true);
     const randomSeconds = Math.floor(Math.random() * (300 - 10 + 1)) + 10;
@@ -28,16 +29,22 @@ const LobbyPage = () => {
     }
   };
 
-  // ✨ "매칭 취소" 버튼 클릭 시 실행될 함수
   const handleCancelMatching = () => {
-    setIsMatching(false); // 매칭 상태를 false로 변경하여 로비 화면으로 되돌립니다.
+    setIsMatching(false);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('username');
-    console.log("로그아웃 되었습니다.");
-    navigate('/');
+  /**
+   * ⭐ 수정된 로그아웃 핸들러
+   * AuthContext의 공식 로그아웃 절차를 따릅니다.
+   */
+  const handleLogout = async () => {
+    try {
+      await auth.logout();
+      // 로그아웃 성공 후, App.jsx에 정의된 /signin 경로로 이동합니다.
+      navigate('/signin');
+    } catch (error) {
+      console.error("Failed to logout from Lobby:", error);
+    }
   };
 
   return (
@@ -55,14 +62,12 @@ const LobbyPage = () => {
             <Loader />
             <p className="matching-text">매칭하는 중...</p>
             <p className="wait-time-text">예상 대기 시간 : {estimatedTime}</p>
-            {/* ✨ 매칭 취소 버튼 추가 */}
             <button className="main-button secondary cancel-matching" onClick={handleCancelMatching}>
               매칭 취소
             </button>
           </div>
         ) : (
           <div className="lobby-content">
-            {/* ✨ 기존 img 태그를 TetrisPlayImage 컴포넌트로 교체 */}
             <TetrisPlayImage />
             <button className="main-button login" onClick={handleMatchingClick}>
               매칭하기
@@ -70,6 +75,7 @@ const LobbyPage = () => {
           </div>
         )}
       </div>
+      {/* LogoutModal은 이제 수정된 handleLogout 함수를 사용합니다. */}
       {showLogoutModal && (
         <LogoutModal
           onConfirm={handleLogout}
@@ -81,3 +87,4 @@ const LobbyPage = () => {
 };
 
 export default LobbyPage;
+

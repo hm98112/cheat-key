@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'; // 중앙 관제실(AuthContex
 // import TetrisAnimation from '@/components/TetrisAnimation'; // 배경 애니메이션
 // import './pages.css'; // 페이지 공통 스타일
 
-const LoginPage = () => {
+const SigninPage = () => {
   // 1. 컴포넌트 내부 상태 관리
   const [identifier, setIdentifier] = useState(''); // 닉네임 또는 이메일 입력값
   const [password, setPassword] = useState('');     // 비밀번호 입력값
@@ -91,5 +91,5 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default SigninPage;
 

@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext } from 'react';
-// Canvas의 auth.js 파일에서 실제 API를 호출하는 함수들을 가져옵니다.
+// api/auth.js에서 실제 API를 호출하는 함수들을 가져옵니다.
 import { login as apiLogin, logout as apiLogout } from '../api/auth';
 
 // 1. Context 생성: 앱 전체에서 공유될 데이터 저장 공간을 만듭니다.
@@ -37,10 +37,10 @@ export const AuthProvider = ({ children }) => {
    */
   const logout = async () => {
     const refreshToken = localStorage.getItem('refreshToken');
-    // 1. 서버에 로그아웃을 요청합니다 (선택적이지만 보안에 좋음).
+    // 1. 서버에 로그아웃을 요청합니다 (보안 강화).
     await apiLogout(refreshToken);
     
-    // 2. localStorage에서 토큰을 모두 삭제합니다.
+    // 2. 로컬 저장소의 모든 토큰을 삭제합니다.
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
 
@@ -57,6 +57,7 @@ export const AuthProvider = ({ children }) => {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
+
 
 /**
  * useAuth 커스텀 훅:

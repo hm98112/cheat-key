@@ -19,7 +19,8 @@
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
-    "node-pg-migrate": "^8.0.3"
+    "node-pg-migrate": "^8.0.3",
+    "redis": "^5.8.2"
   },
   "devDependencies": {
     "dotenv-cli": "^10.0.0",
