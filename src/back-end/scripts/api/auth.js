@@ -60,6 +60,7 @@ router.post('/login', async (req, res) => {
     res.status(200).json({
       message: 'Login successful!',
       accessToken,
+      username: user.username, // 로그인한 사용자의 닉네임을 응답에 추가
     });
 
   } catch (error) {

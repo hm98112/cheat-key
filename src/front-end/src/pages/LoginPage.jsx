@@ -1,7 +1,9 @@
 import React, { useState } from 'react'; // Unused imports removed
+import React, { useState } from 'react'; // Unused imports removed
 import { useNavigate } from 'react-router-dom';
 import './pages.css';
 import TetrisAnimation from '@/components/TetrisAnimation';
+import { login } from '../api/auth';
 import { login } from '../api/auth';
 
 const LoginPage = () => {
@@ -14,25 +16,8 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage('');
-    setIsError(false); // Reset error state
-    setIsLoading(true);
-
-    try {
-      const responseData = await login(identifier, password);
-      setMessage('로그인 성공! 메인 화면으로 이동합니다.');
-      
-      localStorage.setItem('accessToken', responseData.accessToken);
-
-      setTimeout(() => navigate('/lobby'), 400);
-
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || '로그인 실패. 아이디 또는 비밀번호를 확인해 주세요.';
-      setMessage(errorMessage);
-      setIsError(true); // Mark the message as an error
-    } finally {
-      setIsLoading(false);
-    }
+    setError('');
+    console.log('로그인 시도:', { email, password });
   };
 
   return (
@@ -73,8 +58,7 @@ const LoginPage = () => {
               type="button"
               className="main-button secondary"
               onClick={() => navigate('/')}
-              disabled={isLoading}
-            >
+              disabled={isLoading}>
               메인 화면
             </button>
           </div>
