@@ -15,8 +15,7 @@ const LobbyPage = () => {
   const intervalRef = useRef(null);
 
   const handleMatchingClick = () => {
-    setIsMatching(true);
-    setElapsedTime(0);
+    window.location.href = 'http://localhost:3001';
   };
 
   const handleCancelMatching = () => {
@@ -45,8 +44,7 @@ const LobbyPage = () => {
   return (
     <div className="main-container">
       <TetrisAnimation />
-      {/* ↓↓↓ 이 부분의 top-right-user-info div 전체를 삭제합니다. ↓↓↓
-      */}
+      {/* ↓↓↓ 이 부분의 top-right-user-info div 전체를 삭제합니다. ↓↓↓ */}
 
       <div className="content-box">
         {isMatching ? (

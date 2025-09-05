@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TetrisAnimation from '@/components/TetrisAnimation';
-import './Pages.css'; // 스타일을 위한 CSS 파일
+import './pages.css'; // 스타일을 위한 CSS 파일
 
 const MainPage = () => {
   const navigate = useNavigate();
