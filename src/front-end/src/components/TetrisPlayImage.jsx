@@ -1,5 +1,5 @@
 import React from 'react';
-import './TetrisPlayImage.css'; // 스타일을 위한 CSS 파일
+import './components.css'; // 스타일을 위한 CSS 파일
 
 // 각 블록의 색상 정의
 const COLORS = {

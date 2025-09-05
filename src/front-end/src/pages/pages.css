@@ -372,7 +372,7 @@
 /* --- 게임 설명 버튼 --- */
 .bottom-right-container {
   position: absolute;
-  bottom: 20px;
+  top: 20px;
   right: 20px;
   z-index: 20;
 }

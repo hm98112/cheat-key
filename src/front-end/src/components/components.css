@@ -1,0 +1,207 @@
+/* 전체 컨테이너 */
+.tetris-image-container {
+  display: flex;
+  gap: 10px;
+  background-color: #333;
+  padding: 15px;
+  border-radius: 10px;
+  border: 2px solid #555;
+  width: 100%;
+  max-width: 450px; /* 전체 너비 조절 */
+  box-sizing: border-box;
+}
+
+/* 10x20 게임 보드 */
+.tetris-board {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  grid-template-rows: repeat(20, 1fr);
+  width: 65%;
+  aspect-ratio: 10 / 20; /* 10:20 비율 유지 */
+  background-color: #111;
+  border: 2px solid #777;
+  gap: 1px;
+}
+
+/* 보드의 각 셀 (칸) */
+.tetris-cell {
+  width: 100%;
+  height: 100%;
+  border: 2px solid #333;
+  box-sizing: border-box;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+  margin: 1px;
+}
+
+/* 우측 정보 패널 */
+.info-panel {
+  width: 35%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: white;
+  font-family: 'Arial', sans-serif;
+}
+
+.info-box {
+  background-color: #111;
+  border: 2px solid #777;
+  border-radius: 5px;
+  padding: 10px;
+  text-align: center;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.info-box p {
+  margin: 0 0 10px 0;
+  font-weight: bold;
+  color: #ccc;
+}
+
+.info-box span {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.next-box {
+  flex-grow: 1.5; /* NEXT 칸을 조금 더 크게 */
+}
+
+/* NEXT 도형 표시를 위한 그리드 */
+.next-shape {
+  width: 80%;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+}
+
+.next-shape .cell {
+  width: 100%;
+  height: 100%;
+  border: 2px solid #333;
+  box-sizing: border-box;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+  margin: 1px;
+}
+
+/* 로딩 스피너의 스타일 */
+.loader {
+  border: 8px solid #f3f3f3; /* 전체 테두리: 밝은 회색 */
+  border-top: 8px solid #fef600; /* 윗부분 테두리: 노란색 (회전 효과 강조) */
+  border-radius: 50%; /* 원형으로 만듦 */
+  width: 80px; /* 너비 */
+  height: 80px; /* 높이 */
+  animation: spin 1s linear infinite; /* 1초마다 한 바퀴 회전, 무한 반복 */
+  margin: 20px auto; /* 위아래 여백, 가운데 정렬 */
+}
+
+/* 회전 애니메이션 정의 */
+@keyframes spin {
+  0% { transform: rotate(0deg); } /* 시작 각도 */
+  100% { transform: rotate(360deg); } /* 끝 각도 (한 바퀴) */
+}
+
+/* Header.css */
+
+/*
+  1. 전체 헤더 스타일링
+     - 배경색, 그림자, 패딩 등을 설정하여 헤더의 시각적 요소를 정의합니다.
+*/
+.app-header {
+  background-color: #2c3e50; /* 어두운 배경색 */
+  color: #ecf0f1; /* 밝은 텍스트 색상 */
+  padding: 1rem 2rem; /* 위아래, 좌우 패딩 */
+  display: flex; /* 내부 요소들을 유연하게 정렬 */
+  justify-content: space-between; /* 로고와 네비게이션을 양 끝으로 분리 */
+  align-items: center; /* 세로 중앙 정렬 */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* 미세한 그림자 효과 */
+  font-family: 'Arial', sans-serif;
+  /* position: absolute와 z-index는 App.jsx 구조에 따라 필요할 수 있습니다. */
+  width: 100%;
+  box-sizing: border-box;
+  z-index: 100;
+}
+
+/*
+  2. 로고 스타일링
+     - 링크처럼 보이지 않게 텍스트 데코레이션을 제거하고, 글꼴 크기를 키웁니다.
+*/
+.app-header .logo {
+  font-size: 1.5rem; /* 글꼴 크기 */
+  font-weight: bold; /* 글꼴 굵기 */
+  color: #ecf0f1;
+  text-decoration: none; /* 밑줄 제거 */
+  transition: color 0.3s ease; /* 색상 변경 시 부드러운 전환 효과 */
+}
+
+.app-header .logo:hover {
+  color: #3498db; /* 마우스 오버 시 색상 변경 */
+}
+
+/*
+  3. 네비게이션 컨테이너 스타일링
+*/
+.navigation {
+  display: flex;
+  gap: 1rem; /* 네비게이션 아이템 사이의 간격 */
+}
+
+/*
+  4. 버튼 스타일링 (기본)
+     - 모든 `.main-button` 클래스에 공통적으로 적용될 스타일
+*/
+.main-button {
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/*
+  5. 주요 버튼 스타일 (로그인, 회원가입)
+*/
+.main-button {
+  background-color: #3498db; /* 파란색 배경 */
+  color: white;
+}
+
+.main-button:hover {
+  background-color: #2980b9; /* 마우스 오버 시 더 어두운 파란색 */
+}
+/*
+  6. 보조 버튼 스타일 (로그아웃, 회원가입의 경우)
+     - 테두리만 있는 스타일
+*/
+.secondary {
+  background-color: transparent; /* 투명한 배경 */
+  color: #3498db; /* 파란색 텍스트 */
+  border: 2px solid #3498db; /* 파란색 테두리 */
+}
+
+.secondary:hover {
+  background-color: #3498db; /* 마우스 오버 시 파란색 배경 */
+  color: white; /* 마우스 오버 시 흰색 텍스트 */
+}
+
+/*
+  7. 사용자 정보 및 액션 그룹
+*/
+.user-actions, .guest-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-actions span {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #ecf0f1;
+}
