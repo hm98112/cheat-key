@@ -10,6 +10,4 @@ const pool = new Pool({
   // 필요한 경우 SSL 설정 등 추가
 });
 
-module.exports = {
-  query: (text, params) => pool.query(text, params),
-};
+module.exports = pool;

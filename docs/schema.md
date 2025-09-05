@@ -58,6 +58,7 @@
 |-------|-------|-------|-------|
 | user_id | SERIAL | PRIMARY KEY |사용자 고유 식별자 (자동 증가)|
 | username | VARCHAR(50) | UNIQUE, NOT NULL |사용자 닉네임 (중복 불가)|
+| email | VARCHAR(50) | UNIQUE, NOT NULL |사용자 이메일 (중복 불가)|
 |password_hash|VARCHAR(100)|NOT NULL|비밀번호 (Bcrypt로 해싱하여 저장)|
 |role|VARCHAR(20)|DEFAULT 'user'|사용자 역할 ('user', 'admin')|
 |status|VARCHAR(20)|DEFAULT 'active'|계정 상태 ('active', 'banned', 'deleted')|

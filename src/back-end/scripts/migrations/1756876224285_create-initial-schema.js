@@ -61,6 +61,11 @@ exports.up = (pgm) => {
       initial_elo INT NOT NULL,
       final_elo INT NOT NULL
     );
+
+
+    -- 초기 데이터 삽입: 기본 게임 종류 추가
+    INSERT INTO game_types (name, description) VALUES
+    ('Tetris', 'Classic Tetris game');
   `);
 };
 
@@ -72,10 +77,10 @@ exports.up = (pgm) => {
 // 'export const' -> 'exports.' 로 변경
 exports.down = (pgm) => {
   pgm.sql(`
-    DROP TABLE game_participants;
-    DROP TABLE games;
-    DROP TABLE user_game_ratings;
-    DROP TABLE users;
-    DROP TABLE game_types;
+    DROP TABLE IF EXISTS game_participants;
+    DROP TABLE IF EXISTS games;
+    DROP TABLE IF EXISTS user_game_ratings;
+    DROP TABLE IF EXISTS users;
+    DROP TABLE IF EXISTS game_types;
   `);
 };
