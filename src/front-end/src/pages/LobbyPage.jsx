@@ -1,44 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react'; // useEffect, useRef 임포트 추가
 import { useNavigate } from 'react-router-dom';
 import Loader from '@/components/Loader.jsx';
 import LogoutModal from '@/components/LogoutModal.jsx';
 import TetrisAnimation from '@/components/TetrisAnimation';
-import TetrisPlayImage from '../components/TetrisPlayImage'; // TetrisPlayImage 컴포넌트를 임포트합니다.
+import TetrisPlayImage from '../components/TetrisPlayImage';
+import InstructionsModal from '../components/InstructionsModal';
 import './pages.css';
 
 const LobbyPage = () => {
   const [isMatching, setIsMatching] = useState(false);
-  const [estimatedTime, setEstimatedTime] = useState('');
+  const [elapsedTime, setElapsedTime] = useState(0); // 'elapsedTime' 상태 추가 (경과 시간)
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showInstructionsModal, setShowInstructionsModal] = useState(false);
   const navigate = useNavigate();
+  
+  // setInterval을 관리하기 위해 useRef를 사용합니다.
+  const intervalRef = useRef(null);
 
   const nickname = localStorage.getItem('username') || "게스트";
 
-  // '매칭하기' 버튼 클릭 시 실행될 함수
   const handleMatchingClick = () => {
     setIsMatching(true);
-    const randomSeconds = Math.floor(Math.random() * (300 - 10 + 1)) + 10;
-    const minutes = Math.floor(randomSeconds / 60);
-    const seconds = randomSeconds % 60;
-
-    if (minutes > 0) {
-      setEstimatedTime(`${minutes}분 ${seconds}초`);
-    } else {
-      setEstimatedTime(`${seconds}초`);
-    }
+    setElapsedTime(0); // 매칭 시작 시 경과 시간을 0으로 초기화
   };
 
-  // ✨ "매칭 취소" 버튼 클릭 시 실행될 함수
   const handleCancelMatching = () => {
-    setIsMatching(false); // 매칭 상태를 false로 변경하여 로비 화면으로 되돌립니다.
+    setIsMatching(false);
   };
-
+  
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('username');
     console.log("로그아웃 되었습니다.");
     navigate('/');
   };
+
+  // isMatching 상태가 변경될 때마다 타이머를 제어하는 useEffect
+  useEffect(() => {
+    // isMatching이 true일 때 (매칭 시작)
+    if (isMatching) {
+      // 1초마다 elapsedTime을 1씩 증가시키는 interval 시작
+      intervalRef.current = setInterval(() => {
+        setElapsedTime(prevTime => prevTime + 1);
+      }, 1000);
+    } 
+    // isMatching이 false일 때 (매칭 취소 또는 초기 상태)
+    else {
+      // 실행 중인 interval이 있으면 정지시킴
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    }
+
+    // 컴포넌트가 언마운트될 때 interval을 정리하는 cleanup 함수
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [isMatching]); // isMatching 상태가 바뀔 때만 이 effect가 실행됩니다.
 
   return (
     <div className="main-container">
@@ -49,20 +69,20 @@ const LobbyPage = () => {
           로그아웃
         </button>
       </div>
+
       <div className="content-box">
         {isMatching ? (
           <div className="matching-content">
             <Loader />
             <p className="matching-text">매칭하는 중...</p>
-            <p className="wait-time-text">예상 대기 시간 : {estimatedTime}</p>
-            {/* ✨ 매칭 취소 버튼 추가 */}
+            {/* 'estimatedTime' 대신 'elapsedTime' 상태를 사용 */}
+            <p className="wait-time-text">대기 시간 : {elapsedTime}초</p>
             <button className="main-button secondary cancel-matching" onClick={handleCancelMatching}>
               매칭 취소
             </button>
           </div>
         ) : (
           <div className="lobby-content">
-            {/* ✨ 기존 img 태그를 TetrisPlayImage 컴포넌트로 교체 */}
             <TetrisPlayImage />
             <button className="main-button login" onClick={handleMatchingClick}>
               매칭하기
@@ -70,11 +90,22 @@ const LobbyPage = () => {
           </div>
         )}
       </div>
+
+      <div className="bottom-right-container">
+          <button className="instructions-button" onClick={() => setShowInstructionsModal(true)}>
+              게임설명서
+          </button>
+      </div>
+
       {showLogoutModal && (
         <LogoutModal
           onConfirm={handleLogout}
           onCancel={() => setShowLogoutModal(false)}
         />
+      )}
+
+      {showInstructionsModal && (
+        <InstructionsModal onClose={() => setShowInstructionsModal(false)} />
       )}
     </div>
   );

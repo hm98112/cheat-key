@@ -1,15 +1,13 @@
-<!-- --- 프론트엔드 테스트트 --- -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TETRIS BATTLE</title>
+    <title>대전 테트리스</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* --- CSS 전체 수정 --- */
         * {
             box-sizing: border-box;
         }
@@ -31,31 +29,30 @@
             overflow: hidden;
         }
 
-        /* 중앙 컨텐츠 박스 */
         .content-box {
             background-color: rgba(26, 26, 46, 0.8);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 30px; /* 패딩 조정 */
+            padding: 30px;
             border-radius: 15px;
             text-align: center;
             color: white;
             z-index: 10;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            width: 95%; /* 너비를 %로 설정 */
-            max-width: 650px; /* 게임 컨테이너를 담기 위해 너비 확장 */
+            width: 95%;
+            max-width: 650px;
         }
 
         #status {
             font-size: 1.5em;
             margin-bottom: 20px;
             color: #e0e0e0;
-            height: 30px; /* 상태 메시지 높이 고정 */
+            height: 30px;
         }
         
         .game-container {
             display: flex;
             gap: 20px;
-            justify-content: center; /* 중앙 정렬 */
+            justify-content: center;
             align-items: flex-start;
         }
 
@@ -71,8 +68,8 @@
         }
 
         canvas {
-            border: 2px solid #4f4f8e; /* 테마에 맞는 보라색 계열 테두리 */
-            background-color: #0f0f1e; /* 캔버스 배경색 */
+            border: 2px solid #4f4f8e;
+            background-color: #0f0f1e;
             border-radius: 8px;
             box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
         }
@@ -89,7 +86,6 @@
     </style>
 </head>
 <body>
-    <!-- 요청하신 HTML 구조 적용 -->
     <div class="main-container">
         <div class="content-box">
             <h1 id="status">서버에 연결 중...</h1>
@@ -122,6 +118,7 @@
         let lastTime = 0, dropCounter = 0, dropInterval = 1000;
 
         function createEmptyBoard() { return Array.from({ length: ROWS }, () => Array(COLS).fill(0)); }
+        
         function resetPlayer() {
             const typeId = Math.floor(Math.random() * (SHAPES.length - 1)) + 1;
             player = { pos: { x: Math.floor(COLS / 2) - 1, y: 0 }, matrix: SHAPES[typeId], typeId };
@@ -131,12 +128,14 @@
                 statusEl.textContent = '게임 오버! 당신이 졌습니다.';
             }
         }
+        
         function draw() {
             drawBoard(board, playerCtx);
             if (player) drawMatrix(player.matrix, player.pos, playerCtx);
         }
+        
         function drawBoard(boardData, ctx) {
-            ctx.fillStyle = '#0f0f1e'; // 캔버스 배경색
+            ctx.fillStyle = '#0f0f1e';
             ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
             boardData.forEach((row, y) => row.forEach((value, x) => {
                 if (value !== 0) {
@@ -147,6 +146,7 @@
                 }
             }));
         }
+        
         function drawMatrix(matrix, offset, ctx) {
             matrix.forEach((row, y) => row.forEach((value, x) => {
                 if (value !== 0) {
@@ -157,16 +157,19 @@
                 }
             }));
         }
+        
         function isColliding(board, player) {
             for (let y = 0; y < player.matrix.length; y++) for (let x = 0; x < player.matrix[y].length; x++)
                 if (player.matrix[y][x] !== 0 && (board[y + player.pos.y] && board[y + player.pos.y][x + player.pos.x]) !== 0) return true;
             return false;
         }
+        
         function merge(board, player) {
             player.matrix.forEach((row, y) => row.forEach((value, x) => {
                 if (value !== 0) board[y + player.pos.y][x + player.pos.x] = value;
             }));
         }
+        
         function clearLines() {
             let clearedLines = 0;
             outer: for (let y = board.length - 1; y >= 0; y--) {
@@ -177,11 +180,17 @@
                 clearedLines++;
             }
             if (clearedLines > 0) {
-                score += clearedLines * 10;
+                score += clearedLines * (clearedLines * 5);
                 playerScoreEl.textContent = score;
+
+                const currentLevel = Math.floor(score / 100) + 1;
+                const newInterval = 1000 - (currentLevel * 50);
+                dropInterval = Math.max(100, newInterval);
+                
                 socket.emit('lineClear', { lines: clearedLines, room });
             }
         }
+        
         function addGarbageLines(count) {
             for (let i = 0; i < count; i++) {
                 const row = Array(COLS).fill(8);
@@ -190,6 +199,7 @@
                 board.push(row);
             }
         }
+        
         function update(time = 0) {
             if (gameOver) return;
             const deltaTime = time - lastTime;
@@ -199,11 +209,13 @@
             draw();
             requestAnimationFrame(update);
         }
+        
         function playerMove(dir) {
             if (gameOver) return;
             player.pos.x += dir;
             if (isColliding(board, player)) player.pos.x -= dir;
         }
+        
         function playerDrop() {
             if (gameOver) return;
             player.pos.y++;
@@ -215,6 +227,7 @@
             }
             dropCounter = 0;
         }
+        
         function playerRotate() {
             if (gameOver) return;
             const matrix = player.matrix;
@@ -227,6 +240,7 @@
             player.matrix = rotated;
             if (isColliding(board, player)) player.matrix = matrix;
         }
+        
         document.addEventListener('keydown', e => {
             if (!player) return;
             if (e.key === 'ArrowLeft') playerMove(-1);
@@ -265,4 +279,3 @@
     </script>
 </body>
 </html>
-
