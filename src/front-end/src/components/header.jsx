@@ -1,55 +1,68 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // 중앙 관제실(AuthContext)과 통신
-// import './Header.css'; 
+import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate, Link } from 'react-router-dom'; // Link 임포트
+import LogoutModal from './LogoutModal';
+import './components.css'; // Header 전용 CSS 파일
 
 const Header = () => {
-  // 1. 필요한 훅들을 가져옵니다.
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const auth = useAuth();
   const navigate = useNavigate();
-  const auth = useAuth(); // AuthContext에서 isLoggedIn, logout 함수를 가져옵니다.
 
-  // 2. 로그아웃 버튼 클릭 시 실행될 핸들러
   const handleLogout = async () => {
+    // 로그아웃 로직을 실행하기 전에 먼저 팝업창 닫아 로그아웃 창 남아있는 문제 해결
+    setShowLogoutModal(false);
     try {
-      // AuthContext에 정의된 공식 로그아웃 절차를 실행합니다.
       await auth.logout();
-      // 로그아웃 성공 후 로그인 페이지로 이동합니다.
       navigate('/signin');
     } catch (error) {
-      console.error("Failed to logout:", error);
+      console.error("Failed to logout from Header:", error);
     }
   };
 
   return (
+    // 최상위 클래스를 'app-header'로 변경
     <header className="app-header">
-      {/* 로고를 클릭하면 메인 페이지로 이동합니다. */}
-      <Link to="/" className="logo">My Game</Link>
+      {/* 로고를 Link 컴포넌트로 만들어 클릭 시 메인 페이지로 이동하도록 함 */}
+      <Link to="/" className="logo">
+        MY GAME
+      </Link>
       
+      {/* 네비게이션 영역 */}
       <nav className="navigation">
-        {/* 3. isLoggedIn 상태에 따라 다른 UI를 보여줍니다 (조건부 렌더링). */}
         {auth.isLoggedIn ? (
-          // 로그인했을 때 보여줄 UI
+          // 로그인 상태일 때: 사용자 정보와 로그아웃 버튼 표시
           <div className="user-actions">
-            {/* TODO: 사용자 닉네임 표시 */}
-            <span>환영합니다!</span>
-            <button onClick={handleLogout} className="main-button secondary">
+            <span>{auth.user?.username}님 환영합니다!</span>
+            <button
+              className="main-button secondary" // 'secondary' 클래스 적용
+              onClick={() => setShowLogoutModal(true)}
+            >
               로그아웃
             </button>
           </div>
         ) : (
-          // 로그인하지 않았을 때 보여줄 UI
+          // 로그아웃 상태일 때: 로그인/회원가입 버튼 표시
           <div className="guest-actions">
-            <button onClick={() => navigate('/signin')} className="main-button">
+            <button className="main-button" onClick={() => navigate('/signin')}>
               로그인
             </button>
-            <button onClick={() => navigate('/signup')} className="main-button secondary">
+            <button className="main-button secondary" onClick={() => navigate('/signup')}>
               회원가입
             </button>
           </div>
         )}
       </nav>
+
+      {/* 로그아웃 모달 */}
+      {showLogoutModal && (
+        <LogoutModal
+          onConfirm={handleLogout}
+          onCancel={() => setShowLogoutModal(false)}
+        />
+      )}
     </header>
   );
 };
 
 export default Header;
-

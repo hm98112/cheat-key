@@ -1,15 +1,23 @@
+<<<<<<< HEAD
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/axiosConfig.js'; // [추가] API 클라이언트를 가져옵니다.
 
+=======
+import React, { useState, useEffect, useRef } from 'react';
+// useNavigate는 더 이상 필요 없으므로 삭제해도 됩니다. (Header에서 처리)
+// useAuth도 더 이상 필요 없으므로 삭제합니다.
+>>>>>>> abf022e6666499301240e496b6d6cb9e5c11b62b
 import Loader from '@/components/Loader.jsx';
-import LogoutModal from '@/components/LogoutModal.jsx';
+// LogoutModal은 Header로 이동했으므로 여기서 삭제합니다.
 import TetrisAnimation from '@/components/TetrisAnimation';
 import TetrisPlayImage from '../components/TetrisPlayImage';
+import InstructionsModal from '../components/InstructionsModal';
 import './pages.css';
 
 const LobbyPage = () => {
+<<<<<<< HEAD
   const [isMatching, setIsMatching] = React.useState(false);
   // [삭제] 예상 대기 시간은 실제 데이터가 아니므로 삭제합니다.
   // const [estimatedTime, setEstimatedTime] = React.useState(''); 
@@ -41,6 +49,15 @@ const LobbyPage = () => {
       setErrorMessage(error.response?.data?.message || '매칭 서버에 연결할 수 없습니다.');
       setIsMatching(false); // 매칭 상태를 다시 '시작 전'으로 되돌립니다.
     }
+=======
+  const [isMatching, setIsMatching] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [showInstructionsModal, setShowInstructionsModal] = useState(false);
+  const intervalRef = useRef(null);
+
+  const handleMatchingClick = () => {
+    window.location.href = 'http://localhost:3001';
+>>>>>>> abf022e6666499301240e496b6d6cb9e5c11b62b
   };
 
   const handleCancelMatching = async () => {
@@ -50,30 +67,50 @@ const LobbyPage = () => {
     console.log("매칭이 취소되었습니다.");
   };
 
+<<<<<<< HEAD
   const handleLogout = async () => {
     try {
       await auth.logout();
       navigate('/signin');
     } catch (error) {
       console.error("Failed to logout from Lobby:", error);
+=======
+  useEffect(() => {
+    if (isMatching) {
+      intervalRef.current = setInterval(() => {
+        setElapsedTime(prevTime => prevTime + 1);
+      }, 1000);
+    } 
+    else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+>>>>>>> abf022e6666499301240e496b6d6cb9e5c11b62b
     }
-  };
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [isMatching]);
 
   return (
     <div className="main-container">
       <TetrisAnimation />
-      <div className="top-right-user-info">
-        <span className="nickname">{nickname}</span>
-        <button className="logout-button" onClick={() => setShowLogoutModal(true)}>
-          로그아웃
-        </button>
-      </div>
+      {/* ↓↓↓ 이 부분의 top-right-user-info div 전체를 삭제합니다. ↓↓↓ */}
+
       <div className="content-box">
         {isMatching ? (
           <div className="matching-content">
             <Loader />
+<<<<<<< HEAD
             <p className="matching-text">상대를 찾는 중입니다...</p>
             {/* [삭제] 가짜 예상 대기 시간을 제거하고 심플하게 변경합니다. */}
+=======
+            <p className="matching-text">매칭하는 중...</p>
+            <p className="wait-time-text">대기 시간 : {elapsedTime}초</p>
+>>>>>>> abf022e6666499301240e496b6d6cb9e5c11b62b
             <button className="main-button secondary cancel-matching" onClick={handleCancelMatching}>
               매칭 취소
             </button>
@@ -89,14 +126,33 @@ const LobbyPage = () => {
           </div>
         )}
       </div>
+<<<<<<< HEAD
       {showLogoutModal && (
         <LogoutModal
           onConfirm={handleLogout}
           onCancel={() => setShowLogoutModal(false)}
         />
+=======
+
+      <div className="bottom-right-container">
+          <button className="instructions-button" onClick={() => setShowInstructionsModal(true)}>
+              게임설명서
+          </button>
+      </div>
+      
+      {/* ↓↓↓ 이 부분의 showLogoutModal 및 LogoutModal 렌더링 부분을 삭제합니다. ↓↓↓
+      */}
+
+      {showInstructionsModal && (
+        <InstructionsModal onClose={() => setShowInstructionsModal(false)} />
+>>>>>>> abf022e6666499301240e496b6d6cb9e5c11b62b
       )}
     </div>
   );
 };
 
+<<<<<<< HEAD
 export default LobbyPage;
+=======
+export default LobbyPage;
+>>>>>>> abf022e6666499301240e496b6d6cb9e5c11b62b
