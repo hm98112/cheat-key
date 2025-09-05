@@ -8,6 +8,7 @@ const SignupPage = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rpassword, setRPassword] = useState(''); //09/05 이지후 추가
   const [message, setMessage] = useState(''); // 성공/에러 메시지를 함께 처리할 상태
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -16,6 +17,13 @@ const SignupPage = () => {
     e.preventDefault();
     setMessage('');
     setIsLoading(true);
+
+    // 09/05 이지후 추가 비밀번호와 비밀번호 확인이 일치하는지 체크
+    if (password !== rpassword) {
+      setMessage('비밀번호가 일치하지 않습니다.');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       // Canvas에 있는 auth.js의 signup 함수를 호출합니다.
@@ -63,6 +71,15 @@ const SignupPage = () => {
             className="auth-input"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={8}
+          />
+          <input
+            type="password"
+            placeholder="비밀번호 확인"
+            className="auth-input"
+            value={rpassword}
+            onChange={(e) => setRPassword(e.target.value)}
             required
             minLength={8}
           />
