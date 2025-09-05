@@ -47,8 +47,15 @@ router.post('/signup', async (req, res) => {
     // 5. 에러 처리
     // PostgreSQL에서 UNIQUE 제약 조건 위반 시 '23505' 에러 코드를 반환
     if (error.code === '23505') {
-      console.error(`Error: Username already exists - ${username}`);
-      return res.status(409).json({ message: 'Username already exists.' }); // 409 Conflict
+      if (error.constraint === 'users_username_key') {
+        console.error(`Error: Username already exists - ${username}`);
+        return res.status(409).json({ message: '이미 사용중인 닉네임입니다.' }); // 409 Conflict
+      }
+      
+      if (error.constraint === 'users_email_key') {
+        console.error(`Error: Email already exists - ${email}`);
+        return res.status(409).json({ message: '이미 등록된 이메일입니다.' }); // 409 Conflict
+      }
     }
 
     console.error('Error during user signup:', error);

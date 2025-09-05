@@ -1,8 +1,9 @@
-<<<<<<< HEAD
 # Dependency directories
 #node_modules 폴더를 Git 추적에서 제외합니다.
 /src/front-end/node_modules/
 /src/back-end/node_modules/
+/node_modules/
+
 
 # Environment variables
 /src/front-end/.env
@@ -19,7 +20,3 @@
 # OS-specific files
 .DS_Store
 Thumbs.db
-=======
-# Environment variables
-/src/back-end/.env
->>>>>>> 36a39444af492da3e7288e76da0e058e572ee7a7
