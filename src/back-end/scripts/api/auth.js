@@ -1,8 +1,8 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const db = require('../config/db'); // 가정: 별도의 파일에서 PostgreSQL 연결 풀(pool)을 설정
-const redisClient = require('../config/redis'); // 가정: 별도의 파일에서 Redis 클라이언트 설정
+const db = require('../config/db'); // 별도의 파일에서 PostgreSQL 연결 풀(pool)을 설정
+const redisClient = require('../config/redis'); // 별도의 파일에서 Redis 클라이언트 설정
 
 const router = express.Router();
 
@@ -15,9 +15,7 @@ router.post('/login', async (req, res) => {
   }
 
   try {
-    // 2. 데이터베이스에서 사용자 정보 
-    
-    // 👇 isEmail 변수를 먼저 정의합니다.
+    // 2. 데이터베이스에서 사용자 정보 조회 (identifier는 username 또는 email)
     const isEmail = identifier.includes('@');
     
     const query = isEmail
@@ -28,7 +26,6 @@ router.post('/login', async (req, res) => {
     
     // 사용자가 존재하지 않는 경우
     if (rows.length === 0) {
-      // 보안을 위해 "존재하지 않는 사용자"라는 메시지 대신 "자격 증명 실패"로 통일하는 것이 좋음
       return res.status(401).json({ message: '로그인에 실패했습니다. 아이디, 비밀번호를 확인하세요.' });
     }
 
@@ -44,15 +41,13 @@ router.post('/login', async (req, res) => {
 
     // 4. JWT(Access Token) 생성
     const payload = { userId: user.user_id, username: user.username, role: user.role };
-      // 필요한 경우 다른 정보 추가 (예: 역할)
     
-    // 1. JWT 비밀키는 .env 파일에 저장하고 관리해야 함
-    const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: '15m', 
-    });
-    // 2. Refresh Token 발급 (유효기간: 7일)
+    // 4-1. JWT 비밀키는 .env 파일에 저장하고 관리해야 함
+    const accessToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '15m'});
+    
+    // 4-2. Refresh Token 발급 (유효기간: 7일)
     const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
-
+    
     console.log(`User logged in: ${user.username}`);
 
     // 5. 성공 응답 (토큰 포함)
