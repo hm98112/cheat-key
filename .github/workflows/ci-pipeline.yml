@@ -1,10 +1,13 @@
 # Workflow 이름
-name: Build and Push Image to ACR (CI)
+name: Build and Push Frontend & Backend Images
 
-# Github의 infra 브랜치에 코드가 push될 때 워크플로우 실행
+# Github main 브랜치의 VERSION 파일에 코드가 push될 때 워크플로우 실행
+# 테스트 중!! 트리거 = infra 브랜치의 VERSION 파일 수정
 on:
   push:
     branches: [ infra ]
+    paths:
+      - 'VERSION'
 
 # 워크플로우가 Git에 다시 Push할 수 있도록 권한 부여
 permissions:
@@ -13,11 +16,12 @@ permissions:
 # 환경변수 정의
 env:
   ACR_NAME: tetrisgameacr
-  IMAGE_REPOSITORY: tetris-app
+  BACKEND_IMAGE_REPO: tetris-backend
+  FRONTEND_IMAGE_REPO: tetris-frontend
 
 jobs:
-  # ci 라는 이름의 작업 정의
-  ci:
+  # build-and-deploy 라는 이름의 작업 정의
+  build-and-deploy:
     runs-on: ubuntu-latest
     
     steps:
@@ -25,10 +29,10 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
         with:
-          # ✨ Git Push 하기 위한 Personal Access Token
+          # Git Push 하기 위한 Personal Access Token
           token: ${{ secrets.PAT }}
 
-      # 2. 이미지 태그 설정
+      # 2. 이미지 태그 설정 (공용 VERSION 파일 사용)
       - name: Set image tag
         id: set-image-tag
         run: |
@@ -47,26 +51,36 @@ jobs:
           username: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
           password: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}
 
-      # 4. Dockerfile로 이미지 build
-      - name: Build Docker image
+      # 4-1. 백엔드 Docker 이미지 빌드 및 푸시
+      - name: Build and push backend image
         run: |
-          docker build ./dev \
-            -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_REPOSITORY }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
+          docker build ./src/back-end \
+            -f ./src/back-end/Dockerfile \
+            -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
+          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
 
-      # 5. 빌드된 Docker 이미지를 ACR로 push
-      - name: Push Docker image to ACR
+      # 4-2. 프론트엔드 Docker 이미지 빌드 및 푸시
+      - name: Build and push frontend image
         run: |
-          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_REPOSITORY }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
+          docker build ./src/front-end \
+            -f ./src/front-end/Dockerfile \
+            -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
+          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
 
-      # ✨6. Git 설정 및 YAML 파일 업데이트
-      - name: Update Kubernetes manifest
+      # 5. Git 설정 및 YAML 파일들 업데이트
+      - name: Update Kubernetes manifests
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
-          sed -i "s|image:.*|image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_REPOSITORY }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}|g" k8s-manifests/deployment.yaml
+          # 백엔드 Deployment 업데이트
+          sed -i "s|image:.*|image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}|g" k8s-manifests/backend-deployment.yaml
+          
+          # 프론트엔드 Deployment 업데이트
+          sed -i "s|image:.*|image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}|g" k8s-manifests/frontend-deployment.yaml
 
-      # 7. 변경된 YAML 파일을 infra 브랜치에 다시 Push
+      # 6. 변경된 YAML 파일들을 main 브랜치에 다시 Push
       - name: Commit and push manifest changes
         run: |
-          git diff --quiet || (git commit -am "chore(ci): Update image tag to ${{ steps.set-image-tag.outputs.IMAGE_TAG }}" && git push)
+          git diff --quiet || (git commit -am "chore(ci): Update image tags to ${{ steps.set-image-tag.outputs.IMAGE_TAG }}" && git push)
+

@@ -1,0 +1,79 @@
+# 백엔드 애플리케이션을 어떻게 실행할지 정의 (Key Vault 연동)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tetris-backend
+spec:
+  replicas: 2 # 안정성을 위해 2개를 실행
+  selector:
+    matchLabels:
+      app: tetris-backend
+  template:
+    metadata:
+      labels:
+        app: tetris-backend
+    spec:
+      containers:
+      - name: backend-container
+        # CI 파이프라인이 ACR에 올린 백엔드 이미지를 사용
+        image: tetrisgameacr.azurecr.io/tetris-backend:1.0.0 # 
+        ports:
+        - containerPort: 3000
+
+        # --- ✨ 1. 비밀 정보를 환경 변수로 주입 ---
+        # CSI Driver가 생성해 줄 Kubernetes Secret에서 값을 가져와 환경 변수로 설정
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets # 아래 nodePublishSecretRef에서 정의한 Secret 이름
+              key: postgresql-url
+        - name: REDIS_HOST
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: redis-host
+        - name: REDIS_PASS
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: redis-pass
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: jwt-secret
+
+        # --- ✨ 2. 비밀 정보가 담긴 볼륨을 컨테이너에 마운트 ---
+        volumeMounts:
+        - name: secrets-store-volume
+          mountPath: "/mnt/secrets-store"
+          readOnly: true
+        
+        # 컨테이너 건강 검진 설정
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 3000
+          initialDelaySeconds: 15 # DB 연결 시간을 고려해 조금 길게 설정
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+
+      # CSI Driver를 통해 Key Vault 비밀을 가져오는 볼륨 정의 ---
+      volumes:
+        - name: secrets-store-volume
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            # 어떤 SecretProviderClass를 사용할지 지정
+            volumeAttributes:
+              secretProviderClass: "azure-kv-tetris-secrets"
+            # 마운트된 비밀들을 Kubernetes Secret 객체로도 생성합니다.
+            # 이렇게 해야 위 `env` 섹션에서 `secretKeyRef`를 사용할 수 있습니다.
+            nodePublishSecretRef:
+              name: app-secrets

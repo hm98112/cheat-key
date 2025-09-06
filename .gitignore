@@ -1,0 +1,7 @@
+# .gitignore
+node_modules/
+package-lock.json
+terraform.tfstate
+.terraform/
+keyvault.tf
+.env
