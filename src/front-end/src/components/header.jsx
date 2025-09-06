@@ -25,7 +25,7 @@ const Header = () => {
     <header className="app-header">
       {/* 로고를 Link 컴포넌트로 만들어 클릭 시 메인 페이지로 이동하도록 함 */}
       <Link to="/" className="logo">
-        MY GAME
+        CHEATKEY GAME
       </Link>
       
       {/* 네비게이션 영역 */}

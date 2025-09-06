@@ -15,8 +15,17 @@ const LobbyPage = () => {
   const intervalRef = useRef(null);
 
   const handleMatchingClick = () => {
-    window.location.href = 'http://localhost:3001';
-  };
+    // localStorage에서 accessToken을 가져옵니다.
+  const accessToken = localStorage.getItem('accessToken');
+
+  // 토큰이 없으면 게임 페이지로 이동하지 않고 경고를 표시합니다.
+  if (!accessToken) {
+    alert("로그인이 필요합니다!");
+    return;
+  }
+  // URL 뒤에 ?token=... 형식으로 토큰을 붙여서 이동합니다.
+  window.location.href = `http://localhost:3001?token=${accessToken}`;
+};
 
   const handleCancelMatching = () => {
     setIsMatching(false);
