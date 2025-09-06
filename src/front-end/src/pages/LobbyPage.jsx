@@ -8,7 +8,7 @@ import apiClient from '../api/axiosConfig';
 import Loader from '@/components/Loader.jsx';
 import TetrisAnimation from '@/components/TetrisAnimation';
 import TetrisPlayImage from '../components/TetrisPlayImage';
-import InstructionsModal from '../components/InstructionsModal'; // [추가] 게임 설명서 모달
+import InstructionsModal from '../components/InstructionsModal'; // 게임 설명서 모달
 import './pages.css';
 
 
@@ -20,18 +20,22 @@ const LobbyPage = () => {
   const intervalRef = useRef(null);
   const navigate = useNavigate();
   const socketRef = useRef(null);
-  const auth = useAuth();
-  const userId = localStorage.getItem('userId');
-  console.log(`[DEBUG] LobbyPage 렌더링. localStorage에서 가져온 userId: ${userId}`);
+  const { token } = useAuth();
+
+  
 
   // Socket.IO 연결 및 이벤트 리스너를 관리하는 useEffect
   useEffect(() => {
-    if (!userId) return; // userId가 없으면 연결하지 않습니다.
-    // 1. 컴포넌트가 마운트되면 즉시 소켓에 연결합니다.
-    console.log(`[DEBUG] useEffect 실행. 이 userId ('${userId}')로 소켓 연결을 시도합니다.`);
-
+    
+    if (!token) {
+      console.error('[Socket.IO] 연결 실패: 인증 토큰이 없습니다.');
+      return;
+    }
+    // 서버의 인증 방식에 맞게 'auth' 옵션으로 토큰을 전송합니다.
     const socket = io('http://localhost:8080', {
-      query: { userId }
+      auth: {
+        token: token  
+      }
     });
     socketRef.current = socket;
 
@@ -56,7 +60,7 @@ const LobbyPage = () => {
         socket.disconnect();
       }
     };
-  }, [userId, navigate]);
+  }, [navigate, token]);
 
   // 매칭 경과 시간을 측정하는 타이머 useEffect
   useEffect(() => {

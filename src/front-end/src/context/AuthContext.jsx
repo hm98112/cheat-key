@@ -7,14 +7,15 @@ export const AuthProvider = ({ children }) => {
   const [accessToken, setAccessToken] = useState(localStorage.getItem('accessToken'));
   const [user, setUser] = useState(null);
 
-    useEffect(() => {
+  useEffect(() => {
     const storedUsername = localStorage.getItem('username');
     const storedUserId = localStorage.getItem('userId');
-    if (storedUsername && storedUserId) {
+    if (accessToken && storedUsername && storedUserId) {
       setUser({ username: storedUsername, userId: storedUserId });
+    } else {
+      setUser(null); // 토큰이 없으면 사용자 정보도 확실히 비웁니다.
     }
   }, [accessToken]);
-
 
   const login = async (identifier, password) => {
     // 1. 서버로부터 토큰 및 사용자 정보를 받아옵니다.
@@ -46,6 +47,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('username');
 
     setAccessToken(null);
+    setUser(null);
+
   };
 
   const value = {
@@ -53,6 +56,7 @@ export const AuthProvider = ({ children }) => {
     user,
     login,
     logout,
+    token: accessToken
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
