@@ -27,7 +27,6 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
         with:
-          # Git Push 하기 위한 Personal Access Token
           token: ${{ secrets.PAT }}
 
       # 2. 이미지 태그 설정 (공용 VERSION 파일 사용)
@@ -52,17 +51,13 @@ jobs:
       # 4-1. 백엔드 Docker 이미지 빌드 및 푸시
       - name: Build and push backend image
         run: |
-          docker build ./src/back-end \
-            -f ./src/back-end/Dockerfile \
-            -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
+          docker build ./src/back-end -f ./src/back-end/Dockerfile -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
           docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
 
       # 4-2. 프론트엔드 Docker 이미지 빌드 및 푸시
       - name: Build and push frontend image
         run: |
-          docker build ./src/front-end \
-            -f ./src/front-end/Dockerfile \
-            -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
+          docker build ./src/front-end -f ./src/front-end/Dockerfile -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
           docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
 
       # 5. Git 설정 및 YAML 파일들 업데이트
@@ -71,11 +66,9 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
-          # 백엔드 Deployment 업데이트
-          sed -i "s|image:.*tetris-backend.*|image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}|g" k8s-manifests/backend-deployment.yaml
-          
-          # 프론트엔드 Deployment 업데이트
-          sed -i "s|image:.*tetris-frontend.*|image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}|g" k8s-manifests/frontend-deployment.yaml
+          # ✨ 수정된 부분: sed 명령어의 범위를 더 명확하게 지정하여 안정성 향상
+          sed -i "s|image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:.*|image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}|g" k8s-manifests/backend-deployment.yaml
+          sed -i "s|image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:.*|image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}|g" k8s-manifests/frontend-deployment.yaml
 
       # 6. 변경된 YAML 파일들을 main 브랜치에 다시 Push
       - name: Commit and push manifest changes
