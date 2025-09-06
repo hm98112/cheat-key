@@ -13,6 +13,7 @@ import SigninPage from './pages/SigninPage';
 import SignupPage from './pages/SignupPage';
 import LobbyPage from './pages/LobbyPage';
 import NotFound from './pages/NotFound';
+import TetrisPage from './pages/TestrisPage';
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
             <Route element={<ProtectedRoute />}>
               <Route path="/lobby" element={<LobbyPage />} />
               {/* <Route path="/my-page" element={<MyPage />} /> */}
+              <Route path="/tetris/:gameId" element={<TetrisPage />} />
             </Route>
             
             {/* --- 항상 접근 가능한 라우트 --- */}

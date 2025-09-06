@@ -110,5 +110,5 @@
 | game_id | SERIAL |FK (games) |게임 고유 식별자 (세션 ID)|
 |user_id|SERIAL|FK (users)|참여한 사용자의 ID|
 |initial_elo|INT|NOT NULL|게임 시작 시점의 ELO 점수|
-| final_elo | INT | NOT NULL | 게임 종료 후 변동된 ELO 점수|
+| final_elo | INT |  | 게임 종료 후 변동된 ELO 점수|
 
