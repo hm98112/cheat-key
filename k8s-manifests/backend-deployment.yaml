@@ -16,12 +16,11 @@ spec:
       containers:
       - name: backend-container
         # CI 파이프라인이 ACR에 올린 백엔드 이미지를 사용
-        image: tetrisgameacr.azurecr.io/tetris-backend:1.0.0 # 
+        image: tetrisgameacr.azurecr.io/tetris-backend:1.0.5
         ports:
-        - containerPort: 3000
+        - containerPort: 8080 # index.js에서 설정한 포트
 
-        # --- ✨ 1. 비밀 정보를 환경 변수로 주입 ---
-        # CSI Driver가 생성해 줄 Kubernetes Secret에서 값을 가져와 환경 변수로 설정
+        # --- 1. 비밀 정보를 환경 변수로 주입 ---
         env:
         - name: DATABASE_URL
           valueFrom:
@@ -43,8 +42,13 @@ spec:
             secretKeyRef:
               name: app-secrets
               key: jwt-secret
+        - name: REFRESH_TOKEN_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: refresh-token-secret
 
-        # --- ✨ 2. 비밀 정보가 담긴 볼륨을 컨테이너에 마운트 ---
+        # --- 2. 비밀 정보가 담긴 볼륨을 컨테이너에 마운트 ---
         volumeMounts:
         - name: secrets-store-volume
           mountPath: "/mnt/secrets-store"
@@ -54,26 +58,23 @@ spec:
         livenessProbe:
           httpGet:
             path: /healthz
-            port: 3000
-          initialDelaySeconds: 15 # DB 연결 시간을 고려해 조금 길게 설정
+            port: 8080
+          initialDelaySeconds: 15
           periodSeconds: 20
         readinessProbe:
           httpGet:
             path: /healthz
-            port: 3000
+            port: 8080
           initialDelaySeconds: 5
           periodSeconds: 10
 
-      # CSI Driver를 통해 Key Vault 비밀을 가져오는 볼륨 정의 ---
+      # --- 3. CSI Driver를 통해 Key Vault 비밀을 가져오는 볼륨 정의 ---
       volumes:
         - name: secrets-store-volume
           csi:
             driver: secrets-store.csi.k8s.io
             readOnly: true
-            # 어떤 SecretProviderClass를 사용할지 지정
             volumeAttributes:
               secretProviderClass: "azure-kv-tetris-secrets"
-            # 마운트된 비밀들을 Kubernetes Secret 객체로도 생성합니다.
-            # 이렇게 해야 위 `env` 섹션에서 `secretKeyRef`를 사용할 수 있습니다.
             nodePublishSecretRef:
               name: app-secrets

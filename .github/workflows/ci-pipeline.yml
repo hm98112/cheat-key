@@ -1,11 +1,10 @@
 # Workflow 이름
 name: Build and Push Frontend & Backend Images
 
-# Github main 브랜치의 VERSION 파일에 코드가 push될 때 워크플로우 실행
-# 테스트 중!! 트리거 = infra 브랜치의 VERSION 파일 수정
+# Github main 브랜치의 VERSION 파일이 수정되었을 때 워크플로우 실행
 on:
   push:
-    branches: [ infra ]
+    branches: [ main ]
     paths:
       - 'VERSION'
 
@@ -20,7 +19,6 @@ env:
   FRONTEND_IMAGE_REPO: tetris-frontend
 
 jobs:
-  # build-and-deploy 라는 이름의 작업 정의
   build-and-deploy:
     runs-on: ubuntu-latest
     
@@ -74,13 +72,12 @@ jobs:
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
           # 백엔드 Deployment 업데이트
-          sed -i "s|image:.*|image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}|g" k8s-manifests/backend-deployment.yaml
+          sed -i "s|image:.*tetris-backend.*|image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}|g" k8s-manifests/backend-deployment.yaml
           
           # 프론트엔드 Deployment 업데이트
-          sed -i "s|image:.*|image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}|g" k8s-manifests/frontend-deployment.yaml
+          sed -i "s|image:.*tetris-frontend.*|image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}|g" k8s-manifests/frontend-deployment.yaml
 
       # 6. 변경된 YAML 파일들을 main 브랜치에 다시 Push
       - name: Commit and push manifest changes
         run: |
           git diff --quiet || (git commit -am "chore(ci): Update image tags to ${{ steps.set-image-tag.outputs.IMAGE_TAG }}" && git push)
-
