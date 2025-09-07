@@ -3,5 +3,6 @@ node_modules/
 package-lock.json
 terraform.tfstate
 .terraform/
-keyvault.tf
+# keyvault.tf
 .env
+terraform.tfvars
