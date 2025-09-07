@@ -4,7 +4,7 @@ kind: Service
 metadata:
   name: tetris-backend-service
 spec:
-  # ClusterIP: 클러스터 내부에서만 접근 가능한 주소를 만듭니다.
+  # ClusterIP: 클러스터 내부에서만 접근 가능한 주소를 만듦
   type: ClusterIP
   selector:
     app: tetris-backend
