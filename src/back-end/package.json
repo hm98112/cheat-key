@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon index.js",
-    "migrate": "node-pg-migrate",
+    "migrate": "node-pg-migrate -m scripts/migrations",
     "migrate:up": "npm run migrate up",
     "migrate:down": "npm run migrate down"
   },
