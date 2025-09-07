@@ -20,7 +20,7 @@ spec:
         ports:
         - containerPort: 8080 # index.js에서 설정한 포트
 
-        # --- 1. 비밀 정보를 환경 변수로 주입 ---
+        # 1) 비밀 정보를 환경 변수로 주입 
         env:
         - name: DATABASE_URL
           valueFrom:
@@ -48,13 +48,13 @@ spec:
               name: app-secrets
               key: refresh-token-secret
 
-        # --- 2. 비밀 정보가 담긴 볼륨을 컨테이너에 마운트 ---
+        # 2) 비밀 정보가 담긴 볼륨을 컨테이너에 마운트
         volumeMounts:
         - name: secrets-store-volume
           mountPath: "/mnt/secrets-store"
           readOnly: true
         
-        # 컨테이너 건강 검진 설정
+        # 컨테이너 health check 설정
         livenessProbe:
           httpGet:
             path: /healthz
@@ -68,7 +68,7 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 10
 
-      # --- 3. CSI Driver를 통해 Key Vault 비밀을 가져오는 볼륨 정의 ---
+      # 3) CSI Driver를 통해 Key Vault 비밀을 가져오는 볼륨 정의
       volumes:
         - name: secrets-store-volume
           csi:
