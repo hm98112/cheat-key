@@ -4,7 +4,7 @@ kind: Service
 metadata:
   name: tetris-frontend-service
 spec:
-  # LoadBalancer: 클라우드 제공자(Azure)의 로드밸런서를 통해 공인 IP를 할당받습니다.
+  # LoadBalancer: Azure의 로드밸런서를 통해 공인 IP를 할당받음
   type: LoadBalancer
   selector:
     app: tetris-frontend
