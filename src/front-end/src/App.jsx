@@ -13,7 +13,7 @@ import SigninPage from './pages/SigninPage';
 import SignupPage from './pages/SignupPage';
 import LobbyPage from './pages/LobbyPage';
 import NotFound from './pages/NotFound';
-import TetrisPage from './pages/TestrisPage';
+import TetrisPage from './pages/TetrisPage';
 
 function App() {
   return (

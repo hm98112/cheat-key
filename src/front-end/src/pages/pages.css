@@ -23,7 +23,7 @@
   z-index: 10;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   width: 90%; /* 너비를 %로 설정 */
-  max-width: 420px; /* 최대 너비를 살짝 늘림 */
+  max-width: 560px; /* 최대 너비를 살짝 늘림 */
 }
 
 .auth-form {
@@ -262,7 +262,7 @@
   width: 100%;
   max-width: 300px;
   border-radius: 8px;
-  margin-bottom: 30px;
+  margin-bottom: 10px;
   border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
