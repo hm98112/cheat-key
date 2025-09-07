@@ -59,7 +59,7 @@ exports.up = (pgm) => {
       game_id INT REFERENCES games(game_id) ON DELETE CASCADE NOT NULL,
       user_id INT REFERENCES users(user_id) ON DELETE CASCADE NOT NULL,
       initial_elo INT NOT NULL,
-      final_elo INT NOT NULL
+      final_elo INT
     );
 
 

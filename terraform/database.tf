@@ -8,6 +8,10 @@ resource "azurerm_postgresql_flexible_server" "psql" {
   administrator_login    = "psqladmin"
   administrator_password = var.postgresql_admin_password
 
+  # ✨ 추가된 부분: 'tetrisgamedb' 라는 이름의 데이터베이스를 서버 안에 생성합니다.
+  # db_charset             = "UTF8"
+  # db_collation           = "en_US.utf8"
+
   sku_name = "B_Standard_B1ms"
   storage_mb = 32768 # 32GB
 
