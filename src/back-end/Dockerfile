@@ -22,6 +22,10 @@ USER nodejs
 # 포트 노출
 EXPOSE 8080
 
+# 환경 변수 기본값 설정 (빌드 시 오류 방지)
+ENV NODE_ENV=production
+ENV PORT=8080
+
 # Health check 추가
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:8080/healthz', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"

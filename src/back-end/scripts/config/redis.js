@@ -1,25 +1,50 @@
 const redis = require('redis');
 
-// 로컬 Redis 서버에 연결하기 위한 클라이언트를 생성합니다.
-// 기본적으로 localhost:6379에 연결을 시도합니다.
+// Azure Key Vault에서 주입된 환경 변수 사용
+const redisHost = process.env.REDIS_HOST;
+const redisPass = process.env.REDIS_PASS;
+
+if (!redisHost || !redisPass) {
+  console.error('❌ REDIS_HOST 또는 REDIS_PASS 환경 변수가 설정되지 않았습니다.');
+  process.exit(1);
+}
+
 const redisClient = redis.createClient({
-  url: `rediss://${process.env.REDIS_HOST}:6380`,
-  password: process.env.REDIS_PASS
+  url: `rediss://${redisHost}:6380`,
+  password: redisPass,
+  socket: {
+    connectTimeout: 10000,
+    commandTimeout: 5000,
+    reconnectStrategy: (retries) => {
+      if (retries > 5) return new Error('Redis 연결 재시도 초과');
+      return Math.min(retries * 100, 3000);
+    }
+  }
 });
 
 redisClient.on('connect', () => {
-  console.log('✅ Connected to Redis server!');
+  console.log('✅ Redis 서버에 연결을 시도하고 있습니다...');
+});
+
+redisClient.on('ready', () => {
+  console.log('✅ Redis 서버에 성공적으로 연결되었습니다!');
 });
 
 redisClient.on('error', (err) => {
-  console.error('❌ Redis connection error:', err);
+  console.error('❌ Redis 연결 오류:', err.message);
+});
+
+redisClient.on('end', () => {
+  console.log('🔌 Redis 연결이 종료되었습니다.');
+});
+
+redisClient.on('reconnecting', () => {
+  console.log('🔄 Redis 서버에 다시 연결을 시도하고 있습니다...');
 });
 
 // 비동기 함수로 클라이언트를 연결합니다.
-// Node-redis v4부터는 connect()를 명시적으로 호출해야 합니다.
 (async () => {
   await redisClient.connect();
 })();
 
-// 다른 파일에서 이 클라이언트를 가져와 사용할 수 있도록 내보냅니다.
 module.exports = redisClient;

@@ -13,6 +13,8 @@
     "concurrently": "^9.2.1"
   },
   "dependencies": {
+    "@azure/identity": "^4.11.1",
+    "@azure/keyvault-secrets": "^4.10.0",
     "redis": "^5.8.2"
   }
 }
