@@ -15,6 +15,7 @@ const authRouter = require('./scripts/api/auth');
 const matchmakingRouter = require('./scripts/api/matchmaking');
 const { initializeSocket } = require('./scripts/services/socketManager'); // [추가] Socket.IO 초기화 함수
 const { startMatchmaking } = require('./scripts/services/matchmaking'); // [추가] 매치메이킹 서비스
+const gameResultRouter = require('./scripts/api/gameresult'); 
 const gamesRouter = require('./scripts/api/games');
 
 
@@ -45,6 +46,7 @@ app.use('/api/users', usersRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/matchmaking', matchmakingRouter);
 app.use('/api/games', gamesRouter);
+app.use('/api/game', gameResultRouter); 
 
 // [추가] 생성된 HTTP 서버에 Socket.IO 서버를 연결하여 초기화합니다.
 initializeSocket(server);
@@ -56,6 +58,5 @@ server.listen(PORT, () => {
   console.log(`✅ 서버가 http://localhost:${PORT} 포트에서 실행 중입니다.`);
   startMatchmaking();
 });
-
 
 

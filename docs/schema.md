@@ -58,6 +58,10 @@
 |-------|-------|-------|-------|
 | user_id | SERIAL | PRIMARY KEY |사용자 고유 식별자 (자동 증가)|
 | username | VARCHAR(50) | UNIQUE, NOT NULL |사용자 닉네임 (중복 불가)|
+<<<<<<< HEAD
+=======
+| email | VARCHAR(50) | UNIQUE, NOT NULL |사용자 이메일 (중복 불가)|
+>>>>>>> origin/back-end
 |password_hash|VARCHAR(100)|NOT NULL|비밀번호 (Bcrypt로 해싱하여 저장)|
 |role|VARCHAR(20)|DEFAULT 'user'|사용자 역할 ('user', 'admin')|
 |status|VARCHAR(20)|DEFAULT 'active'|계정 상태 ('active', 'banned', 'deleted')|
@@ -109,5 +113,9 @@
 | game_id | SERIAL |FK (games) |게임 고유 식별자 (세션 ID)|
 |user_id|SERIAL|FK (users)|참여한 사용자의 ID|
 |initial_elo|INT|NOT NULL|게임 시작 시점의 ELO 점수|
+<<<<<<< HEAD
 | final_elo | INT | NOT NULL | 게임 종료 후 변동된 ELO 점수|
+=======
+| final_elo | INT |  | 게임 종료 후 변동된 ELO 점수|
+>>>>>>> origin/back-end
 
