@@ -5,6 +5,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import apiClient from '../api/axiosConfig.js';
 
+// frontend/src/pages/TetrisPage.jsx
+
 const TetrisStyles = () => (
     <style>{`
         * { box-sizing: border-box; }
@@ -19,6 +21,40 @@ const TetrisStyles = () => (
         .side-area { display: flex; flex-direction: column; align-items: center; margin-top: 50px; width: 120px; }
         .side-area h3 { margin-top: 0; margin-bottom: 10px; color: #9BF6FF; font-weight: 400; }
         h2 { margin-top: 0; margin-bottom: 15px; font-weight: 400; }
+        
+        /* ⭐️⭐️⭐️ 플레이어 (나) 스타일 ⭐️⭐️⭐️ */
+        .player-area.self h2 { 
+            color: #FFEE99; /* 밝은 노란색 */
+            font-weight: bold;
+            text-shadow: 0 0 8px rgba(255, 255, 153, 0.6); /* 노란색 그림자 */
+        }
+        .player-area.self canvas { 
+            border: 3px solid #FFEE99; /* 밝은 노란색 테두리 */
+            box-shadow: 0 0 15px rgba(255, 255, 153, 0.8), inset 0 0 10px rgba(0,0,0,0.5); 
+        }
+        .player-area.self .info {
+            background-color: #3a3a0e; /* 어두운 노란색 배경 */
+            border: 1px solid #FFEE99; /* 밝은 노란색 테두리 */
+            color: #FFEE99;
+        }
+
+        /* ⭐️⭐️⭐️ 상대방 스타일 ⭐️⭐️⭐️ */
+        .player-area.opponent h2 { 
+            color: #FFC0CB; /* 핑크색 */
+            font-weight: bold;
+            text-shadow: 0 0 8px rgba(255, 192, 203, 0.6); /* 핑크색 그림자 */
+        }
+        .player-area.opponent canvas { 
+            border: 3px solid #FFC0CB; /* 핑크색 테두리 */
+            box-shadow: 0 0 15px rgba(255, 192, 203, 0.8), inset 0 0 10px rgba(0,0,0,0.5); 
+        }
+        .player-area.opponent .info {
+            background-color: #4a1c22; /* 어두운 핑크색 배경 */
+            border: 1px solid #FFC0CB; /* 핑크색 테두리 */
+            color: #FFC0CB;
+        }
+
+        /* 캔버스 기본 스타일 (겹치지 않도록 주의) */
         canvas { border: 2px solid #4f4f8e; background-color: #0f0f1e; border-radius: 8px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
         .info { background-color: #0f0f1e; border: 1px solid #4f4f8e; border-radius: 8px; padding: 8px 15px; margin-top: 15px; font-size: 1.1em; display: inline-block; }
         .opponent-overlay { position: absolute; top: 42px; left: 0; width: 100%; height: calc(100% - 42px); background-color: rgba(0, 0, 0, 0.7); color: white; display: flex; justify-content: center; align-items: center; font-size: 1.2em; border-radius: 8px; z-index: 10; }
@@ -32,7 +68,6 @@ const TetrisStyles = () => (
         .countdown-message { margin-top: 25px; font-size: 1em; color: #ccc; }
     `}</style>
 );
-
 const GameResultModal = ({ isOpen, result, countdown }) => {
     if (!isOpen || !result) return null;
     const { ratingChange, newRating } = result;
@@ -486,8 +521,9 @@ const TetrisPage = () => {
                         <div className="side-area">
                             <h3>홀드 (C)</h3>
                             <canvas ref={holdCanvasRef} width="96" height="96"></canvas>
-                        </div>
-                        <div className="player-area">
+                         </div>
+                        {/* ⭐️⭐️⭐️ '나'의 플레이어 영역에 'self' 클래스 추가 ⭐️⭐️⭐️ */}
+                        <div className="player-area self"> 
                             <h2>나 ({user ? user.username : 'You'})</h2>
                             <canvas ref={playerCanvasRef} width={COLS * BLOCK_SIZE} height={ROWS * BLOCK_SIZE}></canvas>
                             <div className="info">점수: <span>{playerScore}</span></div>
@@ -496,7 +532,8 @@ const TetrisPage = () => {
                             <h3>다음 블록</h3>
                             <canvas ref={nextPieceCanvasRef} width="96" height="96"></canvas>
                         </div>
-                        <div className="player-area">
+                        {/* ⭐️⭐️⭐️ '상대방' 플레이어 영역에 'opponent' 클래스 추가 ⭐️⭐️⭐️ */}
+                        <div className="player-area opponent"> 
                             <h2>상대방 ({opponentInfoRef.current ? opponentInfoRef.current.username : 'Opponent'})</h2>
                             <canvas ref={opponentCanvasRef} width={COLS * BLOCK_SIZE} height={ROWS * BLOCK_SIZE}></canvas>
                             {isOpponentWaiting && <div className="opponent-overlay">상대방을 기다리는 중...</div>}
