@@ -359,31 +359,48 @@ const TetrisPage = () => {
             gs.dropCounter = 0;
         };
 
-        const playerRotate = (direction) => {
-            if (gs.gameOver || !gs.player || gs.player.typeId === 2) return;
-            const { pos, matrix, rotationState } = gs.player;
-            let rotated = matrix;
-            for (let i = 0; i < (direction === 1 ? 1 : 3); i++) {
-                rotated = rotated[0].map((_, colIndex) => rotated.map(row => row[colIndex]).reverse());
-            }
-            gs.player.matrix = rotated;
-            let newState = (rotationState + direction + 4) % 4;
-            const kickTableType = (gs.player.typeId === 1) ? 'I' : 'JLSTZ';
-            const transitionKey = `${rotationState}-${newState}`;
-            const kickTests = SRS_KICK_DATA[kickTableType][transitionKey];
-            for (const [x, y] of kickTests) {
-                gs.player.pos.x = pos.x + x;
-                gs.player.pos.y = pos.y - y;
-                if (!isColliding(gs.board, gs.player)) {
-                    gs.player.rotationState = newState;
-                    updateGhostPiece();
-                    return;
-                }
-            }
-            gs.player.matrix = matrix;
-            gs.player.pos = pos;
-        };
+      const playerRotate = (direction) => {
+        if (gs.gameOver || !gs.player || gs.player.typeId === 2) return; // O-블록은 회전하지 않습니다.
 
+        // 1. 회전 전의 원본 상태를 저장합니다.
+        const originalPos = gs.player.pos;
+        const originalMatrix = gs.player.matrix;
+        const originalRotationState = gs.player.rotationState;
+
+        // 2. 행렬을 회전시켜 새로운 모양을 계산합니다.
+        let rotatedMatrix = originalMatrix;
+        const rotationCount = direction === 1 ? 1 : 3; // 1: 시계방향, -1: 반시계방향(시계방향 3번)
+        for (let i = 0; i < rotationCount; i++) {
+            rotatedMatrix = rotatedMatrix[0].map((_, colIndex) =>
+                rotatedMatrix.map(row => row[colIndex]).reverse()
+            );
+        }
+
+        // 3. SRS(Super Rotation System) 데이터를 기반으로 Wall Kick 테스트를 준비합니다.
+        const newRotationState = (originalRotationState + direction + 4) % 4;
+        const kickTableType = (gs.player.typeId === 1) ? 'I' : 'JLSTZ';
+        const transitionKey = `${originalRotationState}-${newRotationState}`;
+        const kickTests = SRS_KICK_DATA[kickTableType][transitionKey] || [[0, 0]]; // 데이터가 없는 경우를 대비한 기본값
+
+        // 4. 모든 Wall Kick 경우의 수를 테스트합니다.
+        for (const [kickX, kickY] of kickTests) {
+            const testPos = {
+                x: originalPos.x + kickX,
+                y: originalPos.y - kickY // SRS 데이터의 Y값은 게임 좌표계와 반대입니다.
+            };
+
+            // 테스트용 임시 블록 객체로 충돌 여부를 검사합니다. (⭐️ 핵심: 실제 게임 상태를 바꾸지 않음)
+            if (!isColliding(gs.board, { matrix: rotatedMatrix, pos: testPos })) {
+                // 5. 충돌이 없는 유효한 위치를 찾으면, 그 때서야 실제 게임 상태를 업데이트합니다.
+                gs.player.matrix = rotatedMatrix;
+                gs.player.pos = testPos;
+                gs.player.rotationState = newRotationState;
+                updateGhostPiece(); // 성공했으므로 고스트 블록 위치도 업데이트합니다.
+                return; // 회전 성공 및 함수 종료
+            }
+        }
+        // 6. 모든 Wall Kick 테스트가 실패하면 아무것도 변경하지 않고 함수를 종료합니다.
+        };
         const playerHold = async () => {
             if (gs.gameOver || !gs.canHold) return;
             if (gs.holdPieceType === null) {
