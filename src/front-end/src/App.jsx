@@ -13,11 +13,7 @@ import SigninPage from './pages/SigninPage';
 import SignupPage from './pages/SignupPage';
 import LobbyPage from './pages/LobbyPage';
 import NotFound from './pages/NotFound';
-<<<<<<< HEAD
-import TetrisPage from './pages/TestrisPage';
-=======
 import TetrisPage from './pages/TetrisPage';
->>>>>>> origin/back-end
 
 function App() {
   return (
