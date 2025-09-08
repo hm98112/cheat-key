@@ -1,87 +1,93 @@
+/**
+ * @file gameresult.js
+ * @brief 게임 결과 처리 및 ELO 레이팅 업데이트 관련 API 라우터
+ */
+
+// --- 모듈 임포트 ---
 const express = require('express');
 const router = express.Router();
-const db = require('../config/db');
-const auth = require('../middleware/auth');
-const calculateElo = require('../services/rating'); // ELO 계산 함수(추후 구현)
+const db = require('../config/db'); // 데이터베이스 연결 설정 모듈
+const auth = require('../middleware/auth'); // JWT 인증 미들웨어
+const calculateElo = require('../services/rating'); // ELO 레이팅 계산 서비스 모듈
 
 /**
- * POST /api/game/result
- * 게임 결과를 저장하고 레이팅 점수를 반영
- * body: { gameTypeId, winnerUserId, participantUserIds: [], startedAt, endedAt }
+ * @route   POST /api/gameresult/result
+ * @desc    게임 결과를 받아 DB에 저장하고, 참여 유저들의 ELO 레이팅 점수를 업데이트합니다.
  */
 router.post('/result', auth, async (req, res) => {
-  const { gameId, gameTypeId, winnerUserId, participantUserIds, endedAt } = req.body;
+  // --- ID 값들을 명시적으로 숫자로 변환 ---
+  // req.body로 받은 값은 문자열일 수 있으므로, 숫자 타입으로 통일하여 데이터 불일치 문제를 방지합니다.
+  const { gameId, gameTypeId, endedAt } = req.body;
+  const winnerUserId = req.body.winnerUserId ? parseInt(req.body.winnerUserId, 10) : null;
+  const participantUserIds = Array.isArray(req.body.participantUserIds)
+    ? req.body.participantUserIds.map(id => parseInt(id, 10))
+    : [];
 
-  // 기본 유효성 검사
-  // 1. 필수 정보가 모두 있는지 확인
-  if (!gameId || !gameTypeId || !winnerUserId || !participantUserIds || participantUserIds.length < 2) {
+  // --- 1. 입력값 유효성 검사 ---
+  if (!gameId || !gameTypeId || !winnerUserId || participantUserIds.length < 2) {
     return res.status(400).json({ message: '필수 정보가 누락되었습니다.' });
   }
-
-  // 2. 2인 게임인지 확인
   if (participantUserIds.length !== 2) {
     return res.status(400).json({ message: '현재는 1대1 게임 결과만 처리할 수 있습니다.' });
   }
-  // 3. 승자가 참가자 목록에 있는지 확인
   if (!participantUserIds.includes(winnerUserId)) {
     return res.status(400).json({ message: '승자는 참가자 목록에 포함되어야 합니다.' });
   }
 
-  // 데이터 일관성을 위해 트랜잭션 시작
+  // --- 2. 데이터베이스 트랜잭션 처리 ---
   const client = await db.connect();
 
   try {
     await client.query('BEGIN');
 
-    // 1. 게임 결과 저장
-    const gameUpdate = `
+    // 2-1. 'games' 테이블 업데이트
+    const gameUpdateQuery = `
       UPDATE games
       SET status = 'finished', winner_user_id = $1, ended_at = $2
       WHERE game_id = $3
     `;
-    const gameResult = await client.query(gameUpdate, [winnerUserId, endedAt, gameId]);
+    await client.query(gameUpdateQuery, [winnerUserId, endedAt, gameId]);
 
-    // 2. 레이팅 점수 계산 및 DB 반영
+    // 2-2. ELO 레이팅 계산 및 업데이트
     const loserUserId = participantUserIds.find(id => id !== winnerUserId);
 
-    // 2-1. 참가자들의 기존 ELO 점수 조회 (기본값 1200)
     const ratingQuery = `
       SELECT user_id, elo_rating
       FROM user_game_ratings
       WHERE user_id IN ($1, $2) AND game_type_id = $3;
     `;
-
-
     const { rows: ratingRows } = await client.query(ratingQuery, [winnerUserId, loserUserId, gameTypeId]);
+    
+    // 이제 타입이 일치하므로 정상적으로 ELO 점수를 찾아옵니다.
     const winnerInitialRating = ratingRows.find(r => r.user_id === winnerUserId)?.elo_rating || 1200;
     const loserInitialRating = ratingRows.find(r => r.user_id === loserUserId)?.elo_rating || 1200;
 
+    // 디버깅: console.log(`[ELO PRE] Winner: ${winnerInitialRating}, Loser: ${loserInitialRating}`);
 
-    // 2-2.새 점수 계산
     const { winnerNew, loserNew } = calculateElo(winnerInitialRating, loserInitialRating);
-    // 2-3. 'user_game_ratings' 테이블에 UPSERT (UPDATE or INSERT) 로직 실행
+
+    // 디버깅: console.log(`[ELO POST] Winner: ${winnerNew}, Loser: ${loserNew}`);
+    
     const upsertQuery = `
       INSERT INTO user_game_ratings (user_id, game_type_id, elo_rating)
       VALUES ($1, $2, $3)
       ON CONFLICT (user_id, game_type_id) 
       DO UPDATE SET elo_rating = EXCLUDED.elo_rating;
     `;
-
     await client.query(upsertQuery, [winnerUserId, gameTypeId, winnerNew]);
     await client.query(upsertQuery, [loserUserId, gameTypeId, loserNew]);
 
-    // 3. 'game_participants' 테이블에 시작/종료 ELO 점수와 함께 정보 저장
-    const participantUpdateQuary = `
+    // 2-3. 'game_participants' 테이블 업데이트
+    const participantUpdateQuery = `
       UPDATE game_participants
       SET final_elo = $1
       WHERE game_id = $2 AND user_id = $3;
     `;
-    await client.query(participantUpdateQuary, [winnerNew, gameId, winnerUserId]);
-    await client.query(participantUpdateQuary, [loserNew, gameId, loserUserId]);
+    await client.query(participantUpdateQuery, [winnerNew, gameId, winnerUserId]);
+    await client.query(participantUpdateQuery, [loserNew, gameId, loserUserId]);
 
-
-    // 4. 모든 쿼리가 성공하면 트랜잭션 커밋
     await client.query('COMMIT');
+
     res.status(201).json({
       message: '게임 결과 및 레이팅 반영 완료',
       gameId,
@@ -91,12 +97,10 @@ router.post('/result', auth, async (req, res) => {
       }
     });
   } catch (err) {
-    // 오류 발생 시 롤백
     await client.query('ROLLBACK');
-    console.error('ELO 업데이트 트랜잭션 오류:', err);
+    // 디버깅: console.error('ELO 업데이트 트랜잭션 오류:', err);
     res.status(500).json({ message: '서버 오류가 발생했습니다.' });
   } finally {
-    // 사용한 커넥션 반환
     client.release();
   }
 });
