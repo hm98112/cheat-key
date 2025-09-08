@@ -45,7 +45,7 @@ exports.up = (pgm) => {
     -- user_game_ratings: 사용자의 게임별 ELO 점수를 저장하는 테이블
     CREATE TABLE user_game_ratings (
       rating_id SERIAL PRIMARY KEY,
-      
+
       -- user_id: 'users' 테이블의 user_id를 참조합니다.
       -- ON DELETE CASCADE: 참조하는 user 레코드가 삭제되면, 해당 유저의 ELO 기록도 함께 삭제됩니다.
       user_id INT REFERENCES users(user_id) ON DELETE CASCADE NOT NULL,
@@ -63,7 +63,7 @@ exports.up = (pgm) => {
 
     -- games: 개별 게임 세션(한 판의 게임) 정보를 기록하는 테이블
     CREATE TABLE games (
-      game_id SERIAL PRIMARY KEY
+      game_id SERIAL PRIMARY KEY,
       game_type_id INT REFERENCES game_types(game_type_id) NOT NULL,
 
       -- 게임 상태 ('in_progress', 'finished')
