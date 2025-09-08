@@ -5,12 +5,13 @@
 
 // --- 1. 모듈 임포트 (파일 최상단) ---
 const express = require('express');
+const router = express.Router();
 const auth = require('../middleware/auth');
 const db = require('../config/db');
 const calculateElo = require('../services/rating.js'); // 순수 계산 함수를 불러옵니다.
+const { sendMessageToUser } = require('../services/socketManager');
 
 // --- 2. router 선언 (파일 당 딱 한 번만!) ---
-const router = express.Router();
 
 /**
  * @route   GET /api/games/:gameId/verify
@@ -54,6 +55,11 @@ router.post('/result', auth, async (req, res) => {
         gameId
     } = req.body;
 
+      // 디버깅 로그: 서버가 받은 값을 확인
+    console.log("\n--- [BACKEND LOG] /api/games/result ---");
+    console.log("요청자 ID (from Token):", requesterUserId);
+    console.log("승자 ID (from Frontend):", winnerUserId);
+
     const client = await db.connect();
 
     try {
@@ -89,17 +95,16 @@ router.post('/result', auth, async (req, res) => {
         await client.query(insertParticipantQuery, [gameId, loserUserId, loserOldRating, loserNew]);
 
         await client.query('COMMIT'); // --- 트랜잭션 커밋 ---
-
-        // 6. 요청자에게 보낼 결과 데이터를 정리하여 응답합니다.
-        const ratingChange = (requesterUserId === winnerUserId) ? (winnerNew - winnerOldRating) : (loserNew - loserOldRating);
-        const finalRating = (requesterUserId === winnerUserId) ? winnerNew : loserNew;
-
-        res.status(200).json({
-            message: '게임 결과가 성공적으로 처리되었습니다.',
-            oldRating: (requesterUserId === winnerUserId) ? winnerOldRating : loserOldRating,
-            newRating: finalRating,
-            ratingChange: ratingChange,
-        });
+        // 타입을 문자열로 변환하여 비교
+        const winnerResult = { oldRating: winnerOldRating, newRating: winnerNew, ratingChange: winnerNew - winnerOldRating };
+        const loserResult = { oldRating: loserOldRating, newRating: loserNew, ratingChange: loserNew - loserOldRating };
+        
+        // Socket.IO를 통해 각 플레이어에게 맞는 결과를 전송
+        sendMessageToUser(winnerUserId, 'gameResult', winnerResult);
+        sendMessageToUser(loserUserId, 'gameResult', loserResult);
+        
+        // API를 호출한 클라이언트에게는 간단한 성공 응답
+        res.status(200).json({ message: '결과가 처리되어 소켓으로 전파되었습니다.' });
 
     } catch (error) {
         await client.query('ROLLBACK'); // --- 오류 발생 시 롤백 ---

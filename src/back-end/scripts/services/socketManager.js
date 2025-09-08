@@ -101,8 +101,6 @@ function initializeSocket(server) {
             pieceSequence: initialPieceSequence,
             players: players,
           });
-        } else {
-          // 디버깅: console.error(`[Socket Error] 🚨 게임방 #${gameRoomId}의 플레이어 정보를 가져오는 데 실패했습니다.`);
         }
       }
     });
@@ -164,10 +162,10 @@ function sendMessageToUser(userId, eventName, data) {
   const clientSocket = clients.get(userId.toString());
   if (clientSocket) {
     clientSocket.emit(eventName, data);
-    // 디버깅: console.log(`[Socket.IO] 📤 메시지 전송 -> User ${userId}, Event: ${eventName}`);
+    console.log(`[Socket.IO] 📤 메시지 전송 -> User ${userId}, Event: ${eventName}`);
     return true;
   } else {
-    // 디버깅: console.log(`[Socket.IO] ❓ 전송 실패: User ${userId}를 찾을 수 없음.`);
+    console.log(`[Socket.IO] ❓ 전송 실패: User ${userId}를 찾을 수 없음.`);
     return false;
   }
 }

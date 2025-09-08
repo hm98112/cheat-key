@@ -1,13 +1,14 @@
 // Node.js 내장 모듈 'path'를 가져옵니다. 파일 및 디렉토리 경로를 안전하게 다루기 위해 사용됩니다.
 const path = require('path');
 const http = require('http'); // Node.js 내장 http 모듈
-const express = require('express');
-const cors = require('cors');
 
 // .env 파일의 절대 경로를 명확히 지정하여 로드합니다.
 // __dirname은 현재 파일(index.js)이 위치한 디렉토리의 절대 경로를 나타냅니다.
 // 이렇게 하면 어떤 위치에서 서버를 실행하더라도 항상 'back-end' 폴더 내의 .env 파일을 정확히 찾습니다.
 require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+const express = require('express');
+const cors = require('cors');
 
 // 필요한 라이브러리들을 가져옵니다.
 const usersRouter = require('./scripts/api/users'); 
@@ -37,9 +38,6 @@ if (process.env.JWT_SECRET) {
   console.error('❌ 중요 오류: .env 파일에서 JWT_SECRET을 찾을 수 없습니다!');
   process.exit(1); // 필수 변수가 없으면 서버 실행을 중단시킵니다.
 }
-
-
-
 
 // --- API 라우터 등록 ---
 app.use('/api/users', usersRouter);

@@ -1,5 +1,7 @@
+// frontend/src/pages/TetrisPage.jsx (최종 수정된 전체 코드)
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom'; // ⭐️ useNavigate 추가
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import apiClient from '../api/axiosConfig.js';
 
@@ -20,8 +22,6 @@ const TetrisStyles = () => (
         canvas { border: 2px solid #4f4f8e; background-color: #0f0f1e; border-radius: 8px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
         .info { background-color: #0f0f1e; border: 1px solid #4f4f8e; border-radius: 8px; padding: 8px 15px; margin-top: 15px; font-size: 1.1em; display: inline-block; }
         .opponent-overlay { position: absolute; top: 42px; left: 0; width: 100%; height: calc(100% - 42px); background-color: rgba(0, 0, 0, 0.7); color: white; display: flex; justify-content: center; align-items: center; font-size: 1.2em; border-radius: 8px; z-index: 10; }
-        
-        /* ⭐️ 게임 결과 모달 스타일 추가 */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.75); display: flex; justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: #1e1e3f; padding: 30px 40px; border-radius: 12px; text-align: center; color: #fff; border: 1px solid #4f4f8e; box-shadow: 0 5px 25px rgba(0,0,0,0.5); }
         .modal-content h2 { font-size: 2em; margin-bottom: 15px; color: #9BF6FF; }
@@ -33,14 +33,10 @@ const TetrisStyles = () => (
     `}</style>
 );
 
-// --- ⭐️ 게임 결과 모달 컴포넌트 ---
 const GameResultModal = ({ isOpen, result, countdown }) => {
-    if (!isOpen || !result) {
-        return null;
-    }
+    if (!isOpen || !result) return null;
     const { ratingChange, newRating } = result;
     const isWin = ratingChange >= 0;
-
     return (
         <div className="modal-overlay">
             <div className="modal-content">
@@ -49,16 +45,12 @@ const GameResultModal = ({ isOpen, result, countdown }) => {
                     <p>레이팅 변동: <span className={isWin ? 'rating-up' : 'rating-down'}>{isWin ? '+' : ''}{ratingChange}</span></p>
                     <h3>현재 레이팅: {newRating}</h3>
                 </div>
-                <p className="countdown-message">
-                    {countdown}초 후에 로비로 이동합니다...
-                </p>
+                <p className="countdown-message">{countdown}초 후에 로비로 이동합니다...</p>
             </div>
         </div>
     );
 };
 
-
-// --- 게임 상수 ---
 const COLS = 10, ROWS = 20, BLOCK_SIZE = 24;
 const COLORS = [null, '#FFADAD', '#FFD6A5', '#FDFFB6', '#CAFFBF', '#9BF6FF', '#A0C4FF', '#BDB2FF', '#606060'];
 const SHAPES = [[], [[1, 1, 1, 1]], [[2, 2], [2, 2]], [[0, 3, 3], [3, 3, 0]], [[4, 4, 0], [0, 4, 4]], [[5, 0, 0], [5, 5, 5]], [[0, 0, 6], [6, 6, 6]], [[0, 7, 0], [7, 7, 7]]];
@@ -66,25 +58,19 @@ const SRS_KICK_DATA = { JLSTZ: { '0-1': [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1,
 const DAS_DELAY = 160, DAS_INTERVAL = 40;
 const createEmptyBoard = () => Array.from({ length: ROWS }, () => Array(COLS).fill(0));
 
-
 const TetrisPage = () => {
     const { socket, user } = useAuth();
     const { gameId } = useParams();
-    const navigate = useNavigate(); // ⭐️ 페이지 이동을 위한 hook
-
-    // 🐛 DEBUG: user 객체가 렌더링마다 어떻게 변하는지 확인
-    console.log('[렌더링] 현재 user 객체:', user);
+    const navigate = useNavigate();
 
     const [status, setStatus] = useState('게임을 준비 중입니다...');
     const [playerScore, setPlayerScore] = useState(0);
     const [opponentScore, setOpponentScore] = useState(0);
     const [isOpponentWaiting, setIsOpponentWaiting] = useState(true);
 
-    // --- ⭐️ 결과 모달 관련 상태 추가 ---
     const [isResultModalOpen, setIsResultModalOpen] = useState(false);
     const [gameResultData, setGameResultData] = useState(null);
     const [countdown, setCountdown] = useState(5);
-
 
     const playerCanvasRef = useRef(null);
     const opponentCanvasRef = useRef(null);
@@ -92,26 +78,15 @@ const TetrisPage = () => {
     const holdCanvasRef = useRef(null);
     const contexts = useRef({});
 
-    // --- 게임 관련 정보 저장을 위한 Ref ---
     const opponentInfoRef = useRef(null);
     const gameStartTimeRef = useRef(null);
-    const resultSentRef = useRef(false); // 결과 중복 전송 방지 플래그
+    const resultSentRef = useRef(false);
 
     const gameState = useRef({
         board: createEmptyBoard(),
-        player: null,
-        nextPiece: null,
-        holdPieceType: null,
-        ghostPiece: null,
-        canHold: true,
-        gameOver: false,
-        room: null,
-        pieceSequence: [],
-        pieceIndex: 0,
-        isRequestingPieces: false,
-        dropCounter: 0,
-        dropInterval: 1000,
-        lastTime: 0,
+        player: null, nextPiece: null, holdPieceType: null, ghostPiece: null,
+        canHold: true, gameOver: false, room: null, pieceSequence: [], pieceIndex: 0,
+        isRequestingPieces: false, dropCounter: 0, dropInterval: 1000, lastTime: 0,
         floatingTexts: [],
     });
 
@@ -120,7 +95,6 @@ const TetrisPage = () => {
     const gameLoopId = useRef(null);
     const stateIntervalId = useRef(null);
 
-    // --- 그리기 관련 함수 ---
     const drawBlock = useCallback((x, y, value, ctx, isGhost = false) => {
         if (!ctx) return;
         ctx.fillStyle = COLORS[value];
@@ -177,7 +151,6 @@ const TetrisPage = () => {
         const { playerCtx, nextPieceCtx, holdCtx } = contexts.current;
         if (!playerCtx) return;
         const { board, player, ghostPiece, nextPiece, holdPieceType } = gameState.current;
-
         drawBoard(board, playerCtx);
         if (ghostPiece) drawMatrix(ghostPiece.matrix, ghostPiece.pos, playerCtx, true);
         if (player) drawMatrix(player.matrix, player.pos, playerCtx);
@@ -186,7 +159,6 @@ const TetrisPage = () => {
         drawSideCanvas(holdPieceType ? { matrix: SHAPES[holdPieceType] } : null, holdCtx);
     }, [drawBoard, drawMatrix, drawSideCanvas, drawFloatingTexts]);
 
-    // --- 게임 로직 함수 ---
     const isColliding = useCallback((board, piece) => {
         for (let y = 0; y < piece.matrix.length; y++) {
             for (let x = 0; x < piece.matrix[y].length; x++) {
@@ -206,79 +178,55 @@ const TetrisPage = () => {
         const gs = gameState.current;
         if (!gs.player) return;
         gs.ghostPiece = JSON.parse(JSON.stringify(gs.player));
-        while (!isColliding(gs.board, gs.ghostPiece)) {
-            gs.ghostPiece.pos.y++;
-        }
+        while (!isColliding(gs.board, gs.ghostPiece)) gs.ghostPiece.pos.y++;
         gs.ghostPiece.pos.y--;
     }, [isColliding]);
 
-    // --- ⭐️ 게임 결과 전송 함수 (수정) ---
+    // ⭐️ **수정 1**: API 응답을 사용하지 않고, 호출만 하는 함수
     const sendGameResult = useCallback(async (winnerId) => {
-        if (resultSentRef.current) {
-            console.log('[결과 전송] 이미 결과가 전송되었거나 전송 중입니다.');
-            return;
-        }
-        const opponent = opponentInfoRef.current;
-        const startTime = gameStartTimeRef.current;
-        const myUser = user;
-
-        if (!winnerId || !myUser?.userId || !opponent?.id || !startTime) {
-            console.error('게임 결과 전송에 필요한 정보가 부족합니다.');
-            return;
-        }
+        if (resultSentRef.current) return;
         resultSentRef.current = true;
-        const loserId = (winnerId === myUser.userId) ? opponent.id : myUser.userId;
+
+        const loserId = user?.userId;
+        const startTime = gameStartTimeRef.current;
+        if (!winnerId || !loserId || !startTime || !gameId) {
+            console.error('결과 전송에 필요한 정보 부족');
+            resultSentRef.current = false;
+            return;
+        }
 
         const resultPayload = {
             gameTypeId: 1,
             winnerUserId: winnerId,
             loserUserId: loserId,
-            participantUserIds: [myUser.userId, opponent.id],
             startedAt: startTime.toISOString(),
             endedAt: new Date().toISOString(),
             gameId: gameId,
         };
-        console.log('--- [결과 전송 시도] ---', resultPayload);
 
         try {
-            // ⭐️ API 엔드포인트를 `/games/result`로 수정
-            const response = await apiClient.post('/games/result', resultPayload);
-            console.log('--- [결과 전송 성공!] ---', response.data);
-
-            // ⭐️ 서버로부터 받은 결과로 상태 업데이트
-            setGameResultData(response.data); // { oldRating, newRating, ratingChange }
-            setIsResultModalOpen(true); // 모달 열기
+            await apiClient.post('/games/result', resultPayload);
+            console.log('--- [결과 전송 성공!] --- 서버의 소켓 응답을 기다립니다.');
         } catch (error) {
             console.error('--- [결과 전송 실패!] ---', error.response ? error.response.data : error.message);
             resultSentRef.current = false;
         }
     }, [user, gameId]);
 
-
-    // --- ⭐️ 카운트다운 및 리다이렉트 로직 추가 ---
     useEffect(() => {
         if (isResultModalOpen) {
-            const timer = setInterval(() => {
-                setCountdown(prev => prev - 1);
-            }, 1000);
-
+            const timer = setInterval(() => setCountdown(prev => prev - 1), 1000);
             return () => clearInterval(timer);
         }
     }, [isResultModalOpen]);
 
     useEffect(() => {
-        if (countdown <= 0) {
-            navigate('/lobby');
-        }
+        if (countdown <= 0) navigate('/lobby');
     }, [countdown, navigate]);
 
     useEffect(() => {
-        if (!socket || !gameId || !user || !user.userId) {
-            setStatus('소켓, 게임 ID 또는 유저 정보를 기다리는 중...');
-            return;
-        }
+        if (!socket || !gameId || !user || !user.userId) return;
 
-        console.log(`[TetrisPage] 모든 준비 완료! 게임방 참여 요청 (Game ID: ${gameId}, User: ${user.username})`);
         socket.emit('joinGameRoom', { gameId });
 
         contexts.current = {
@@ -322,14 +270,12 @@ const TetrisPage = () => {
                 socket.emit('gameOver', { room: gs.room });
                 const opponent = opponentInfoRef.current;
                 if (opponent) {
-                    console.log('[게임 로직] 패배 감지. 결과 전송을 시작합니다.');
-                    sendGameResult(opponent.id);
-                } else {
-                    console.error('[게임 로직] 패배했으나, 상대방 정보가 없어 결과를 전송할 수 없습니다.');
+                    sendGameResult(opponent.id); // 패자는 API 호출
                 }
+            } else {
+                gs.canHold = true;
+                updateGhostPiece();
             }
-            gs.canHold = true;
-            updateGhostPiece();
         };
 
         const clearLines = async () => {
@@ -362,17 +308,12 @@ const TetrisPage = () => {
             }
             gs.dropCounter = 0;
         };
-
         const playerMove = (dir) => {
             if (gs.gameOver || !gs.player) return;
             gs.player.pos.x += dir;
-            if (isColliding(gs.board, gs.player)) {
-                gs.player.pos.x -= dir;
-            } else {
-                updateGhostPiece();
-            }
+            if (isColliding(gs.board, gs.player)) gs.player.pos.x -= dir;
+            else updateGhostPiece();
         };
-
         const gameLoop = (time = 0) => {
             if (gs.gameOver) return;
             const deltaTime = time - gs.lastTime;
@@ -388,7 +329,6 @@ const TetrisPage = () => {
             draw();
             gameLoopId.current = requestAnimationFrame(gameLoop);
         };
-
         const playerHardDrop = async () => {
             if (gs.gameOver || !gs.player) return;
             gs.player.pos.y = gs.ghostPiece.pos.y;
@@ -397,33 +337,30 @@ const TetrisPage = () => {
             await resetPlayer();
             gs.dropCounter = 0;
         };
-
-      const playerRotate = (direction) => {
-        if (gs.gameOver || !gs.player || gs.player.typeId === 2) return;
-        const originalPos = gs.player.pos;
-        const originalMatrix = gs.player.matrix;
-        const originalRotationState = gs.player.rotationState;
-        let rotatedMatrix = originalMatrix;
-        const rotationCount = direction === 1 ? 1 : 3;
-        for (let i = 0; i < rotationCount; i++) {
-            rotatedMatrix = rotatedMatrix[0].map((_, colIndex) =>
-                rotatedMatrix.map(row => row[colIndex]).reverse()
-            );
-        }
-        const newRotationState = (originalRotationState + direction + 4) % 4;
-        const kickTableType = (gs.player.typeId === 1) ? 'I' : 'JLSTZ';
-        const transitionKey = `${originalRotationState}-${newRotationState}`;
-        const kickTests = SRS_KICK_DATA[kickTableType][transitionKey] || [[0, 0]];
-        for (const [kickX, kickY] of kickTests) {
-            const testPos = { x: originalPos.x + kickX, y: originalPos.y - kickY };
-            if (!isColliding(gs.board, { matrix: rotatedMatrix, pos: testPos })) {
-                gs.player.matrix = rotatedMatrix;
-                gs.player.pos = testPos;
-                gs.player.rotationState = newRotationState;
-                updateGhostPiece();
-                return;
+        const playerRotate = (direction) => {
+            if (gs.gameOver || !gs.player || gs.player.typeId === 2) return;
+            const originalPos = gs.player.pos;
+            const originalMatrix = gs.player.matrix;
+            const originalRotationState = gs.player.rotationState;
+            let rotatedMatrix = originalMatrix;
+            const rotationCount = direction === 1 ? 1 : 3;
+            for (let i = 0; i < rotationCount; i++) {
+                rotatedMatrix = rotatedMatrix[0].map((_, colIndex) => rotatedMatrix.map(row => row[colIndex]).reverse());
             }
-        }
+            const newRotationState = (originalRotationState + direction + 4) % 4;
+            const kickTableType = (gs.player.typeId === 1) ? 'I' : 'JLSTZ';
+            const transitionKey = `${originalRotationState}-${newRotationState}`;
+            const kickTests = SRS_KICK_DATA[kickTableType][transitionKey] || [[0, 0]];
+            for (const [kickX, kickY] of kickTests) {
+                const testPos = { x: originalPos.x + kickX, y: originalPos.y - kickY };
+                if (!isColliding(gs.board, { matrix: rotatedMatrix, pos: testPos })) {
+                    gs.player.matrix = rotatedMatrix;
+                    gs.player.pos = testPos;
+                    gs.player.rotationState = newRotationState;
+                    updateGhostPiece();
+                    return;
+                }
+            }
         };
         const playerHold = async () => {
             if (gs.gameOver || !gs.canHold) return;
@@ -443,7 +380,6 @@ const TetrisPage = () => {
             gs.canHold = false;
             updateGhostPiece();
         };
-
         const handleKeyDown = (e) => {
             if (!gs.player || gs.gameOver) return;
             if (!keysDown.current[e.key]) {
@@ -466,22 +402,16 @@ const TetrisPage = () => {
         document.addEventListener('keyup', handleKeyUp);
 
         const handleGameStart = (data) => {
-            console.log('Game Start Data:', data);
-            const opponent = data.players.find(p => p.id !== user.userId);
+            if (!user || !user.userId) return;
+            const opponent = data.players.find(p => String(p.id) !== String(user.userId));
             if (opponent) {
                 opponentInfoRef.current = opponent;
-                console.log('상대방 정보:', opponent);
-            } else {
-                console.error("상대방 정보를 찾을 수 없습니다.");
             }
-
             gameStartTimeRef.current = new Date();
-            console.log('게임 시작 시간:', gameStartTimeRef.current);
             gs.room = data.room;
             gs.pieceSequence = data.pieceSequence;
             gs.pieceIndex = 0;
             resultSentRef.current = false;
-
             setStatus('게임 시작!');
             setIsOpponentWaiting(false);
             resetPlayer();
@@ -491,7 +421,6 @@ const TetrisPage = () => {
                 if (!gs.gameOver) socket.emit('boardState', { board: gs.board, score: playerScore, player: gs.player, room: gs.room, senderId: socket.id });
             }, 50);
         };
-
         const handleOpponentState = (opponentState) => {
             if (socket.id !== opponentState.senderId) {
                 drawBoard(opponentState.board, contexts.current.opponentCtx);
@@ -513,16 +442,17 @@ const TetrisPage = () => {
             updateGhostPiece();
         };
 
+        // ⭐️ **수정 2**: 승리 시 더 이상 아무것도 하지 않음 (소켓 응답만 대기)
         const handleOpponentWin = () => {
             gs.gameOver = true;
             setStatus('승리했습니다!');
-            const opponent = opponentInfoRef.current;
-            if (opponent) {
-                console.log('[게임 로직] 승리 감지. 결과 전송을 시작합니다.');
-                sendGameResult(user.userId);
-            } else {
-                console.error('[게임 로직] 승리했으나, 상대방 정보가 없어 결과를 전송할 수 없습니다.');
-            }
+        };
+
+        // ⭐️ **수정 3**: 서버로부터 최종 결과를 받는 리스너
+        const handleGameResult = (resultData) => {
+            console.log('✅ 소켓으로 최종 게임 결과를 받았습니다:', resultData);
+            setGameResultData(resultData);
+            setIsResultModalOpen(true);
         };
 
         socket.on('gameStart', handleGameStart);
@@ -530,6 +460,7 @@ const TetrisPage = () => {
         socket.on('addMorePieces', handleAddMorePieces);
         socket.on('addGarbage', handleAddGarbage);
         socket.on('opponentWin', handleOpponentWin);
+        socket.on('gameResult', handleGameResult); // ⭐️ 리스너 등록
 
         return () => {
             if (stateIntervalId.current) clearInterval(stateIntervalId.current);
@@ -539,10 +470,11 @@ const TetrisPage = () => {
             socket.off('addMorePieces', handleAddMorePieces);
             socket.off('addGarbage', handleAddGarbage);
             socket.off('opponentWin', handleOpponentWin);
+            socket.off('gameResult', handleGameResult); // ⭐️ 클린업
             document.removeEventListener('keydown', handleKeyDown);
             document.removeEventListener('keyup', handleKeyUp);
         };
-    }, [socket, gameId, user, playerScore, draw, isColliding, updateGhostPiece, sendGameResult, navigate]);
+    }, [socket, gameId, user, playerScore, draw, updateGhostPiece, isColliding, sendGameResult, navigate]);
 
     return (
         <>
@@ -573,7 +505,6 @@ const TetrisPage = () => {
                     </div>
                 </div>
             </div>
-            {/* ⭐️ 모달 렌더링 부분 추가 */}
             <GameResultModal 
                 isOpen={isResultModalOpen} 
                 result={gameResultData} 
