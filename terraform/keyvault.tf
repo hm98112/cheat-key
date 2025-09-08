@@ -57,13 +57,47 @@ resource "random_string" "kv_suffix" {
 data "azurerm_client_config" "current" {}
 
 # Key Vault에 저장할 시크릿들
-resource "azurerm_key_vault_secret" "postgresql_url" {
-  name         = "postgresql-url"
-  value        = "postgresql://${azurerm_postgresql_flexible_server.psql.administrator_login}:${var.postgresql_admin_password}@${azurerm_postgresql_flexible_server.psql.fqdn}:5432/${azurerm_postgresql_flexible_server_database.db.name}?sslmode=require"
+resource "azurerm_key_vault_secret" "db_user" {
+  name         = "db-user"
+  value        = azurerm_postgresql_flexible_server.psql.administrator_login
   key_vault_id = azurerm_key_vault.kv.id
 
   depends_on = [azurerm_key_vault.kv]
 }
+
+resource "azurerm_key_vault_secret" "db_host" {
+  name         = "db-host"
+  value        = azurerm_postgresql_flexible_server.psql.fqdn
+  key_vault_id = azurerm_key_vault.kv.id
+
+  depends_on = [azurerm_key_vault.kv]
+}
+
+resource "azurerm_key_vault_secret" "db_database" {
+  name         = "db-database"
+  value        = azurerm_postgresql_flexible_server_database.db.name
+  key_vault_id = azurerm_key_vault.kv.id
+
+  depends_on = [azurerm_key_vault.kv]
+}
+
+resource "azurerm_key_vault_secret" "db_password" {
+  name         = "db-password"
+  value        = var.postgresql_admin_password
+  key_vault_id = azurerm_key_vault.kv.id
+
+  depends_on = [azurerm_key_vault.kv]
+}
+
+resource "azurerm_key_vault_secret" "db_port" {
+  name         = "db-port"
+  value        = 5432
+  key_vault_id = azurerm_key_vault.kv.id
+
+  depends_on = [azurerm_key_vault.kv]
+}
+
+# -------
 
 resource "azurerm_key_vault_secret" "redis_host" {
   name         = "redis-host"
