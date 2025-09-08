@@ -109,8 +109,10 @@ function initializeSocket(server) {
 
     // 'boardState' 이벤트: 상대방에게 보드 상태를 전송합니다.
     socket.on('boardState', (data) => {
-        if(data && data.room) socket.to(data.room.toString()).emit('opponentState', data);
-    });
+       if (data && data.room) {
+        socket.broadcast.to(data.room.toString()).emit('opponentState', data);
+    }
+});
 
     // 'lineClear': 라인 클리어 시 상대방에게 공격 (쓰레기 라인) 전송
     socket.on('lineClear', (data) => {
@@ -132,6 +134,13 @@ function initializeSocket(server) {
       const newPieces = Array.from({ length: 50 }, () => Math.floor(Math.random() * 7)+1);
       // 'socket.emit'은 요청을 보낸 '자기 자신에게만' 메시지를 보냅니다.
       socket.emit('addMorePieces', { newPieces });
+    });
+    // ⭐️ [디버그용 코드 추가]
+    socket.on('debug_addGarbage', (data) => {
+      if (data && data.room && data.count) {
+        // 이벤트를 보낸 사람을 제외하고 방에 있는 상대방에게만 'addGarbage' 이벤트를 보냅니다.
+        socket.broadcast.to(data.room.toString()).emit('addGarbage', data.count);
+      }
     });
 
     // --- 연결 종료 이벤트 리스너 ---

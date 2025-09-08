@@ -5,8 +5,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import apiClient from '../api/axiosConfig.js';
 
-// frontend/src/pages/TetrisPage.jsx
-
 const TetrisStyles = () => (
     <style>{`
         * { box-sizing: border-box; }
@@ -21,40 +19,12 @@ const TetrisStyles = () => (
         .side-area { display: flex; flex-direction: column; align-items: center; margin-top: 50px; width: 120px; }
         .side-area h3 { margin-top: 0; margin-bottom: 10px; color: #9BF6FF; font-weight: 400; }
         h2 { margin-top: 0; margin-bottom: 15px; font-weight: 400; }
-        
-        /* ⭐️⭐️⭐️ 플레이어 (나) 스타일 ⭐️⭐️⭐️ */
-        .player-area.self h2 { 
-            color: #FFEE99; /* 밝은 노란색 */
-            font-weight: bold;
-            text-shadow: 0 0 8px rgba(255, 255, 153, 0.6); /* 노란색 그림자 */
-        }
-        .player-area.self canvas { 
-            border: 3px solid #FFEE99; /* 밝은 노란색 테두리 */
-            box-shadow: 0 0 15px rgba(255, 255, 153, 0.8), inset 0 0 10px rgba(0,0,0,0.5); 
-        }
-        .player-area.self .info {
-            background-color: #3a3a0e; /* 어두운 노란색 배경 */
-            border: 1px solid #FFEE99; /* 밝은 노란색 테두리 */
-            color: #FFEE99;
-        }
-
-        /* ⭐️⭐️⭐️ 상대방 스타일 ⭐️⭐️⭐️ */
-        .player-area.opponent h2 { 
-            color: #FFC0CB; /* 핑크색 */
-            font-weight: bold;
-            text-shadow: 0 0 8px rgba(255, 192, 203, 0.6); /* 핑크색 그림자 */
-        }
-        .player-area.opponent canvas { 
-            border: 3px solid #FFC0CB; /* 핑크색 테두리 */
-            box-shadow: 0 0 15px rgba(255, 192, 203, 0.8), inset 0 0 10px rgba(0,0,0,0.5); 
-        }
-        .player-area.opponent .info {
-            background-color: #4a1c22; /* 어두운 핑크색 배경 */
-            border: 1px solid #FFC0CB; /* 핑크색 테두리 */
-            color: #FFC0CB;
-        }
-
-        /* 캔버스 기본 스타일 (겹치지 않도록 주의) */
+        .player-area.self h2 { color: #FFEE99; font-weight: bold; text-shadow: 0 0 8px rgba(255, 255, 153, 0.6); }
+        .player-area.self canvas { border: 3px solid #FFEE99; box-shadow: 0 0 15px rgba(255, 255, 153, 0.8), inset 0 0 10px rgba(0,0,0,0.5); }
+        .player-area.self .info { background-color: #3a3a0e; border: 1px solid #FFEE99; color: #FFEE99; }
+        .player-area.opponent h2 { color: #FFC0CB; font-weight: bold; text-shadow: 0 0 8px rgba(255, 192, 203, 0.6); }
+        .player-area.opponent canvas { border: 3px solid #FFC0CB; box-shadow: 0 0 15px rgba(255, 192, 203, 0.8), inset 0 0 10px rgba(0,0,0,0.5); }
+        .player-area.opponent .info { background-color: #4a1c22; border: 1px solid #FFC0CB; color: #FFC0CB; }
         canvas { border: 2px solid #4f4f8e; background-color: #0f0f1e; border-radius: 8px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
         .info { background-color: #0f0f1e; border: 1px solid #4f4f8e; border-radius: 8px; padding: 8px 15px; margin-top: 15px; font-size: 1.1em; display: inline-block; }
         .opponent-overlay { position: absolute; top: 42px; left: 0; width: 100%; height: calc(100% - 42px); background-color: rgba(0, 0, 0, 0.7); color: white; display: flex; justify-content: center; align-items: center; font-size: 1.2em; border-radius: 8px; z-index: 10; }
@@ -119,6 +89,7 @@ const TetrisPage = () => {
 
     const gameState = useRef({
         board: createEmptyBoard(),
+        score: 0, // ⭐️ 수정 1: 점수 상태를 ref에 추가
         player: null, nextPiece: null, holdPieceType: null, ghostPiece: null,
         canHold: true, gameOver: false, room: null, pieceSequence: [], pieceIndex: 0,
         isRequestingPieces: false, dropCounter: 0, dropInterval: 1000, lastTime: 0,
@@ -217,11 +188,9 @@ const TetrisPage = () => {
         gs.ghostPiece.pos.y--;
     }, [isColliding]);
 
-    // ⭐️ **수정 1**: API 응답을 사용하지 않고, 호출만 하는 함수
     const sendGameResult = useCallback(async (winnerId) => {
         if (resultSentRef.current) return;
         resultSentRef.current = true;
-
         const loserId = user?.userId;
         const startTime = gameStartTimeRef.current;
         if (!winnerId || !loserId || !startTime || !gameId) {
@@ -229,7 +198,6 @@ const TetrisPage = () => {
             resultSentRef.current = false;
             return;
         }
-
         const resultPayload = {
             gameTypeId: 1,
             winnerUserId: winnerId,
@@ -238,7 +206,6 @@ const TetrisPage = () => {
             endedAt: new Date().toISOString(),
             gameId: gameId,
         };
-
         try {
             await apiClient.post('/games/result', resultPayload);
             console.log('--- [결과 전송 성공!] --- 서버의 소켓 응답을 기다립니다.');
@@ -259,10 +226,15 @@ const TetrisPage = () => {
         if (countdown <= 0) navigate('/lobby');
     }, [countdown, navigate]);
 
+    // ⭐️ 수정 2: 게임 방 입장을 위한 useEffect를 분리 (최초 한 번만 실행)
+    useEffect(() => {
+        if (!socket || !gameId) return;
+        socket.emit('joinGameRoom', { gameId });
+    }, [socket, gameId]);
+
+    // ⭐️ 수정 3: 메인 useEffect 로직 수정
     useEffect(() => {
         if (!socket || !gameId || !user || !user.userId) return;
-
-        socket.emit('joinGameRoom', { gameId });
 
         contexts.current = {
             playerCtx: playerCanvasRef.current.getContext('2d'),
@@ -305,14 +277,15 @@ const TetrisPage = () => {
                 socket.emit('gameOver', { room: gs.room });
                 const opponent = opponentInfoRef.current;
                 if (opponent) {
-                    sendGameResult(opponent.id); // 패자는 API 호출
+                    sendGameResult(opponent.id);
                 }
             } else {
                 gs.canHold = true;
                 updateGhostPiece();
             }
         };
-
+        
+        // ⭐️ 수정 4: 점수 계산 로직 수정
         const clearLines = async () => {
             let clearedLines = 0;
             outer: for (let y = gs.board.length - 1; y >= 0; y--) {
@@ -324,7 +297,9 @@ const TetrisPage = () => {
             }
             if (clearedLines > 0) {
                 const lineScore = [0, 100, 300, 500, 800][clearedLines];
-                setPlayerScore(prev => prev + lineScore);
+                gs.score += lineScore;       // ref의 점수 업데이트
+                setPlayerScore(gs.score); // state 점수 업데이트 (UI 렌더링용)
+
                 addFloatingText(['', 'SINGLE', 'DOUBLE', 'TRIPLE', 'TETRIS!'][clearedLines], gs.player.pos.x * BLOCK_SIZE, gs.player.pos.y * BLOCK_SIZE);
                 addFloatingText(`+${lineScore}`, gs.player.pos.x * BLOCK_SIZE, gs.player.pos.y * BLOCK_SIZE + 30);
                 if (clearedLines >= 2) triggerScreenShake();
@@ -451,9 +426,11 @@ const TetrisPage = () => {
             setIsOpponentWaiting(false);
             resetPlayer();
             gameLoopId.current = requestAnimationFrame(gameLoop);
+            
             if (stateIntervalId.current) clearInterval(stateIntervalId.current);
+            // ⭐️ 수정 5: setInterval에서 playerScore 대신 gs.score를 참조
             stateIntervalId.current = setInterval(() => {
-                if (!gs.gameOver) socket.emit('boardState', { board: gs.board, score: playerScore, player: gs.player, room: gs.room, senderId: socket.id });
+                if (!gs.gameOver) socket.emit('boardState', { board: gs.board, score: gs.score, player: gs.player, room: gs.room, senderId: socket.id });
             }, 50);
         };
         const handleOpponentState = (opponentState) => {
@@ -468,22 +445,24 @@ const TetrisPage = () => {
             gs.isRequestingPieces = false;
         };
         const handleAddGarbage = (count) => {
+            // 쓰레기 라인 공격 시 플레이어 블록이 겹치지 않도록 위로 올려주는 로직 (이전 답변에서 제안)
             for (let i = 0; i < count; i++) {
                 const row = Array(COLS).fill(8);
                 row[Math.floor(Math.random() * COLS)] = 0;
                 gs.board.shift();
                 gs.board.push(row);
             }
+            if (gs.player) {
+                while (isColliding(gs.board, gs.player)) {
+                    gs.player.pos.y--;
+                }
+            }
             updateGhostPiece();
         };
-
-        // ⭐️ **수정 2**: 승리 시 더 이상 아무것도 하지 않음 (소켓 응답만 대기)
         const handleOpponentWin = () => {
             gs.gameOver = true;
             setStatus('승리했습니다!');
         };
-
-        // ⭐️ **수정 3**: 서버로부터 최종 결과를 받는 리스너
         const handleGameResult = (resultData) => {
             console.log('✅ 소켓으로 최종 게임 결과를 받았습니다:', resultData);
             setGameResultData(resultData);
@@ -495,7 +474,7 @@ const TetrisPage = () => {
         socket.on('addMorePieces', handleAddMorePieces);
         socket.on('addGarbage', handleAddGarbage);
         socket.on('opponentWin', handleOpponentWin);
-        socket.on('gameResult', handleGameResult); // ⭐️ 리스너 등록
+        socket.on('gameResult', handleGameResult);
 
         return () => {
             if (stateIntervalId.current) clearInterval(stateIntervalId.current);
@@ -505,11 +484,12 @@ const TetrisPage = () => {
             socket.off('addMorePieces', handleAddMorePieces);
             socket.off('addGarbage', handleAddGarbage);
             socket.off('opponentWin', handleOpponentWin);
-            socket.off('gameResult', handleGameResult); // ⭐️ 클린업
+            socket.off('gameResult', handleGameResult);
             document.removeEventListener('keydown', handleKeyDown);
             document.removeEventListener('keyup', handleKeyUp);
         };
-    }, [socket, gameId, user, playerScore, draw, updateGhostPiece, isColliding, sendGameResult, navigate]);
+    // ⭐️ 수정 6: 의존성 배열에서 playerScore 제거
+    }, [socket, gameId, user, draw, updateGhostPiece, isColliding, sendGameResult, navigate]);
 
     return (
         <>
@@ -522,7 +502,6 @@ const TetrisPage = () => {
                             <h3>홀드 (C)</h3>
                             <canvas ref={holdCanvasRef} width="96" height="96"></canvas>
                          </div>
-                        {/* ⭐️⭐️⭐️ '나'의 플레이어 영역에 'self' 클래스 추가 ⭐️⭐️⭐️ */}
                         <div className="player-area self"> 
                             <h2>나 ({user ? user.username : 'You'})</h2>
                             <canvas ref={playerCanvasRef} width={COLS * BLOCK_SIZE} height={ROWS * BLOCK_SIZE}></canvas>
@@ -532,7 +511,6 @@ const TetrisPage = () => {
                             <h3>다음 블록</h3>
                             <canvas ref={nextPieceCanvasRef} width="96" height="96"></canvas>
                         </div>
-                        {/* ⭐️⭐️⭐️ '상대방' 플레이어 영역에 'opponent' 클래스 추가 ⭐️⭐️⭐️ */}
                         <div className="player-area opponent"> 
                             <h2>상대방 ({opponentInfoRef.current ? opponentInfoRef.current.username : 'Opponent'})</h2>
                             <canvas ref={opponentCanvasRef} width={COLS * BLOCK_SIZE} height={ROWS * BLOCK_SIZE}></canvas>
