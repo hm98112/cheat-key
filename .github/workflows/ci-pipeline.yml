@@ -1,10 +1,10 @@
 # Workflow 이름
 name: Build and Push Frontend & Backend Images
 
-# Github main 브랜치의 VERSION 파일이 수정되었을 때 워크플로우 실행
+# Github infra 브랜치의 VERSION 파일이 수정되었을 때 워크플로우 실행
 on:
   push:
-    branches: [ main ]
+    branches: [ infra ]
     paths:
       - 'VERSION'
 
