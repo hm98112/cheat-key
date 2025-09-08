@@ -13,14 +13,13 @@ router.post('/signup', async (req, res) => {
         return res.status(400).json({ message: 'Username, email, and password are required.' });
     }
 
-    const client = await db.connect();
 
     try {
         // --- 트랜잭션 시작 ---
-        await client.query('BEGIN');
+        await db.query('BEGIN');
 
         // 2. 서비스 중인 모든 게임 종류 조회 (확장성을 위해 추가)
-        const gameTypesResult = await client.query('SELECT game_type_id FROM game_types;');
+        const gameTypesResult = await db.query('SELECT game_type_id FROM game_types;');
         const gameTypes = gameTypesResult.rows;
 
         // 만약 게임 종류가 하나도 없다면 서버 설정 에러이므로 롤백
@@ -39,7 +38,7 @@ router.post('/signup', async (req, res) => {
             RETURNING user_id, username, created_at;
         `;
         const userValues = [username, email, hashedPassword];
-        const { rows } = await client.query(userQuery, userValues);
+        const { rows } = await db.query(userQuery, userValues);
         const newUser = rows[0];
         console.log(`(In Transaction) New user created: ${newUser.username}`);
 
@@ -51,12 +50,12 @@ router.post('/signup', async (req, res) => {
                 VALUES ($1, $2, $3);
             `;
             const eloValues = [newUser.user_id, gameType.game_type_id, initialElo];
-            await client.query(eloQuery, eloValues);
+            await db.query(eloQuery, eloValues);
             console.log(`  - ELO for game_type_id ${gameType.game_type_id} set to ${initialElo}`);
         }
 
         // --- 모든 쿼리가 성공하면 트랜잭션 커밋 ---
-        await client.query('COMMIT');
+        await db.query('COMMIT');
 
         // 6. 성공 응답 반환
         res.status(201).json({
@@ -71,7 +70,7 @@ router.post('/signup', async (req, res) => {
 
     } catch (error) {
         // --- 에러 발생 시 트랜잭션 롤백 ---
-        await client.query('ROLLBACK');
+        await db.query('ROLLBACK');
         console.error('Transaction failed. Rolling back changes.');
 
         // 7. 에러 처리
@@ -89,7 +88,7 @@ router.post('/signup', async (req, res) => {
 
     } finally {
         // --- 사용한 클라이언트를 풀에 반환 ---
-        client.release();
+
     }
 });
 

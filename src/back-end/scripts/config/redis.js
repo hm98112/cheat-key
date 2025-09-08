@@ -2,7 +2,10 @@ const redis = require('redis');
 
 // 로컬 Redis 서버에 연결하기 위한 클라이언트를 생성합니다.
 // 기본적으로 localhost:6379에 연결을 시도합니다.
-const redisClient = redis.createClient();
+const redisClient = redis.createClient({
+  url: `rediss://${process.env.REDIS_HOST}:6380`,
+  password: process.env.REDIS_PASS
+});
 
 redisClient.on('connect', () => {
   console.log('✅ Connected to Redis server!');
