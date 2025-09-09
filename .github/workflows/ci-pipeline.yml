@@ -28,7 +28,7 @@ jobs:
       - name: 'Log in to Azure'
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}      # CI/CD용 관리 ID의 클라이언트 ID
+          client-id: b72c4d27-0017-4737-a271-24d5bddd18d2
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}      # Azure 테넌트 ID
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }} # Azure 구독 ID
           
