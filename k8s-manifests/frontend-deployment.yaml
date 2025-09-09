@@ -1,0 +1,21 @@
+# 프론트엔드 애플리케이션(Nginx)을 어떻게 실행할지 정의
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tetris-frontend
+spec:
+  replicas: 2 # 안정성을 위해 2개를 실행
+  selector:
+    matchLabels:
+      app: tetris-frontend
+  template:
+    metadata:
+      labels:
+        app: tetris-frontend
+    spec:
+      containers:
+      - name: frontend-container
+        # CI 파이프라인이 ACR에 올린 프론트엔드 이미지를 사용
+        image: tetrisgameacr.azurecr.io/tetris-frontend:1.1.2
+        ports:
+        - containerPort: 80 # Nginx는 80번 포트를 사용
