@@ -1,86 +1,94 @@
 import React from 'react';
 import './components.css'; // 스타일을 위한 CSS 파일
 
-// 각 블록의 색상 정의
-const COLORS = {
-  i: 'rgba(241, 13, 13, 0.871)', // I 도형 (빨강)
-  l: 'rgba(6, 193, 245, 0.967)',  // L 도형 (하늘색)
-  o: 'rgba(228, 142, 14, 0.992)', // 네모 도형 (주황)
-  t: 'rgb(142, 4, 147)',           // T 도형 (보라)
-  n: 'rgba(27, 242, 7, 0.964)',   // N 도형 (녹색)
-};
+// FIX: 실제 index.html 게임에서 사용하는 색상 배열 (null을 포함하여 1번부터 인덱싱)
+const GAME_COLORS = [null, '#FFADAD', '#FFD6A5', '#FDFFB6', '#CAFFBF', '#9BF6FF', '#A0C4FF', '#BDB2FF'];
 
-// 게임 보드의 상태를 나타내는 2D 배열
-// 0: 빈 칸, 1~5: 각 도형의 일부
+// FIX: 원래 제공해주신 보드 내 블록 모양(boardState)은 절대 변경하지 않았습니다.
 const boardState = [
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 2, 0, 0, 0, 0, 0], 
-  [0, 0, 0, 0, 2, 0, 0, 0, 0, 0],
-  [0, 0, 0, 2, 2, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 5, 0, 0, 0, 0, 0], 
+  [0, 0, 0, 0, 5, 0, 0, 0, 0, 0],
+  [0, 0, 0, 5, 5, 0, 0, 0, 0, 0],
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
   [0, 0, 0, 0, 0, 0, 0, 0, 1, 0], 
   [0, 0, 0, 0, 0, 0, 0, 0, 1, 0], 
-  [0, 0, 0, 0, 0, 0, 0, 0, 1, 2], 
-  [0, 0, 0, 0, 0, 0, 0, 0, 1, 2], 
-  [0, 0, 0, 0, 5, 0, 4, 0, 2, 2], 
-  [1, 4, 2, 2, 5, 5, 4, 4, 3, 3], 
-  [1, 4, 4, 2, 1, 5, 4, 5, 3, 3], 
-  [1, 4, 5, 2, 1, 2, 5, 5, 2, 2], 
-  [1, 4, 5, 5, 1, 2, 5, 3, 3, 2], 
-  [4, 4, 4, 5, 1, 2, 2, 3, 3, 2], 
+  [0, 0, 0, 0, 0, 0, 0, 0, 1, 5], 
+  [0, 0, 0, 0, 0, 0, 0, 0, 1, 5], 
+  [0, 0, 0, 0, 3, 0, 7, 0, 5, 5], 
+  [1, 7, 6, 6, 3, 3, 7, 7, 2, 2], 
+  [1, 7, 7, 6, 1, 3, 7, 4, 2, 2], 
+  [1, 7, 3, 6, 1, 6, 4, 4, 6, 6], 
+  [1, 7, 3, 3, 1, 6, 4, 2, 2, 6], 
+  [7, 7, 7, 3, 1, 6, 6, 2, 2, 6], 
 ];
 
-// 숫자에 해당하는 색상을 반환하는 헬퍼 함수
+// FIX: 다음 블록(T)을 4x4 그리드 중앙에 배치 (7번: 보라색)
+const nextBlockState = [
+  [0, 0, 0, 0, ],
+  [0, 2, 2, 0, ],
+  [0, 2, 2, 0, ],
+  [0, 0, 0, 0, ],
+];
+
+// FIX: 홀드 박스는 비어있도록 0으로만 채움
+const holdBlockState = [
+  [0, 0, 0, 0, ],
+  [0, 0, 0, 0, ],
+  [0, 0, 0, 0, ],
+  [0, 0, 0, 0, ],
+];
+
+// FIX: 실제 게임 색상 배열을 사용하도록 컬러 함수 수정
 const getColor = (value) => {
-  switch (value) {
-    case 1: return COLORS.i;
-    case 2: return COLORS.l;
-    case 3: return COLORS.o;
-    case 4: return COLORS.t;
-    case 5: return COLORS.n;
-    default: return 'transparent';
-  }
+  // boardState의 숫자(1~5)가 GAME_COLORS의 인덱스(1~7)에 맞게 매칭됩니다.
+  return value > 0 && value < GAME_COLORS.length ? GAME_COLORS[value] : 'transparent';
 };
+
+// 보드나 미리보기 캔버스를 렌더링하는 공통 함수
+const renderGrid = (data, className) => (
+  <div className={className}>
+    {data.flat().map((cell, index) => (
+      <div
+        key={index}
+        className={`${className}-cell`} // e.g., tetris-board-cell
+        style={{ backgroundColor: getColor(cell) }}
+      />
+    ))}
+  </div>
+);
+
 
 const TetrisPlayImage = () => {
   return (
     <div className="tetris-image-container">
-      {/* 게임 보드 */}
-      <div className="tetris-board">
-        {boardState.flat().map((cell, index) => (
-          <div
-            key={index}
-            className="tetris-cell"
-            style={{ backgroundColor: getColor(cell) }}
-          />
-        ))}
-      </div>
+      <div className="tetris-image-inner-content">
 
-      {/* 우측 정보 패널 */}
-      <div className="info-panel">
-        <div className="info-box next-box">
-          <p>NEXT</p>
-          <div className="next-shape">
-            {/* T 도형 예시 */}
-            <div className="cell" style={{ backgroundColor: COLORS.t, gridColumn: 2, gridRow: 1 }}/>
-            <div className="cell" style={{ backgroundColor: COLORS.t, gridColumn: 1, gridRow: 2 }}/>
-            <div className="cell" style={{ backgroundColor: COLORS.t, gridColumn: 2, gridRow: 2 }}/>
-            <div className="cell" style={{ backgroundColor: COLORS.t, gridColumn: 3, gridRow: 2 }}/>
-          </div>
+        {/* FIX: 왼쪽 홀드 박스 (비어 있음) */}
+        <div className="tetris-side-area">
+            <h3>홀드 (C)</h3>
+            {renderGrid(holdBlockState, "tetris-preview-canvas")}
         </div>
-        <div className="info-box">
-          <p>SCORE</p>
-          <span>001130</span>
+        
+        {/* FIX: 중앙 게임 보드 */}
+        <div className="tetris-player-area">
+            {renderGrid(boardState, "tetris-board")}
+            <div className="tetris-info">
+              SCORE: <span>001130</span>
+            </div>
         </div>
-        <div className="info-box">
-          <p>LEVEL</p>
-          <span>05</span>
+
+        {/* FIX: 오른쪽 다음 블록 박스 (T 블록) */}
+        <div className="tetris-side-area">
+            <h3>다음 블록</h3>
+            {renderGrid(nextBlockState, "tetris-preview-canvas")}
         </div>
+
       </div>
     </div>
   );

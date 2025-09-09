@@ -1,13 +1,13 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+// frontend/src/App.jsx
 
-// 1. 필요한 모든 컴포넌트들을 가져옵니다.
+import React from 'react';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
-import Header from './components/Header'; // ⭐ Header 컴포넌트를 import 합니다.
+import Header from './components/Header';
 
-// 2. 각 URL 경로에서 보여줄 페이지 컴포넌트들을 가져옵니다.
 import MainPage from './pages/MainPage';
 import SigninPage from './pages/SigninPage';
 import SignupPage from './pages/SignupPage';
@@ -15,42 +15,49 @@ import LobbyPage from './pages/LobbyPage';
 import NotFound from './pages/NotFound';
 import TetrisPage from './pages/TetrisPage';
 
+/**
+ * Layout 컴포넌트는 페이지의 공통 구조(헤더, 메인 콘텐츠)를 담당합니다.
+ * useLocation 훅을 사용하여 현재 URL에 따라 헤더를 보여줄지 결정합니다.
+ */
+function Layout() {
+  const location = useLocation();
+  // 현재 URL 경로가 '/tetris/' 로 시작하면 헤더를 보여주지 않습니다.
+  const showHeader = !location.pathname.startsWith('/tetris/');
+
+  return (
+    <>
+      {showHeader && <Header />}
+      <main className="main-content">
+        <Routes>
+          <Route element={<PublicRoute />}>
+            <Route path="/signin" element={<SigninPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/" element={<MainPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute />}>
+            <Route path="/lobby" element={<LobbyPage />} />
+            <Route path="/tetris/:gameId" element={<TetrisPage />} />
+          </Route>
+          
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+    </>
+  );
+}
+
+/**
+ * App 컴포넌트는 앱의 최상위 래퍼(Wrapper) 역할을 합니다.
+ */
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        {/* ⭐ Header는 Routes 밖에 위치하여 어떤 페이지로 이동하든 항상 보입니다. */}
-        <Header />
-        
-        {/* 페이지의 메인 콘텐츠를 감싸는 영역 */}
-        <main className="main-content">
-          <Routes>
-            {/* --- 공개 라우트 (로그인 안 한 사용자만) --- */}
-            <Route element={<PublicRoute />}>
-              <Route path="/signin" element={<SigninPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-              <Route path="/" element={<MainPage />} />
-            </Route>
-
-            {/* --- 보호된 라우트 (로그인 한 사용자만) --- */}
-            <Route element={<ProtectedRoute />}>
-              <Route path="/lobby" element={<LobbyPage />} />
-              {/* <Route path="/my-page" element={<MyPage />} /> */}
-              <Route path="/tetris/:gameId" element={<TetrisPage />} />
-            </Route>
-            
-            {/* --- 항상 접근 가능한 라우트 --- */}
-            
-          
-            {/* 404 Not Found */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </main>
-        
+        <Layout />
       </BrowserRouter>
     </AuthProvider>
   );
 }
 
 export default App;
-

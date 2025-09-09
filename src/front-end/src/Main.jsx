@@ -1,10 +1,15 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App.jsx'; // 오직 App.jsx만 import 해야 합니다.
+import './index.css';
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
     <App />
+<<<<<<< HEAD
   </StrictMode>,
 )
+=======
+  </React.StrictMode>,
+);
+>>>>>>> origin/back-end
