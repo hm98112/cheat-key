@@ -431,3 +431,14 @@
   font-weight: bold;
   color: #FFD6A5; /* 주황색 계열로 강조 */
 }
+
+lobby-button-group {
+  margin-top: 20px;
+  display: flex;
+  gap: 15px; /* 버튼 사이 간격 */
+  width: 100%;
+}
+
+.lobby-button-group .main-button {
+  flex: 1; /* 버튼들이 공간을 균등하게 차지하도록 함 */
+}
