@@ -469,12 +469,27 @@ const TetrisPage = () => {
             setIsResultModalOpen(true);
         };
 
+        // --- START: 상대방 연결 끊김 이벤트 핸들러 추가 ---
+        const handleOpponentDisconnect = () => {
+            const gs = gameState.current;
+            if (!gs.gameOver) {
+                gs.gameOver = true;
+                setStatus('상대방의 연결이 끊겼습니다. 승리!');
+                // 중요: 여기서는 sendGameResult()를 호출하지 않습니다.
+                // 서버의 disconnect 핸들러가 결과를 자동으로 처리하고
+                // 'gameResult' 이벤트를 보내줄 것이므로, 그것을 기다립니다.
+                console.log("상대방 연결 끊김. 서버의 최종 결과(gameResult)를 기다립니다.");
+            }
+        };
+        // --- END: 상대방 연결 끊김 이벤트 핸들러 추가 ---
+
         socket.on('gameStart', handleGameStart);
         socket.on('opponentState', handleOpponentState);
         socket.on('addMorePieces', handleAddMorePieces);
         socket.on('addGarbage', handleAddGarbage);
         socket.on('opponentWin', handleOpponentWin);
         socket.on('gameResult', handleGameResult);
+        socket.on('opponentDisconnect', handleOpponentDisconnect);
 
         return () => {
             if (stateIntervalId.current) clearInterval(stateIntervalId.current);
@@ -485,6 +500,7 @@ const TetrisPage = () => {
             socket.off('addGarbage', handleAddGarbage);
             socket.off('opponentWin', handleOpponentWin);
             socket.off('gameResult', handleGameResult);
+            socket.off('opponentDisconnect', handleOpponentDisconnect);
             document.removeEventListener('keydown', handleKeyDown);
             document.removeEventListener('keyup', handleKeyUp);
         };

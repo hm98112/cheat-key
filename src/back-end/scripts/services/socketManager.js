@@ -4,10 +4,14 @@
  * @details 이 모듈은 Express 서버에 Socket.IO를 연결하고, 사용자 인증, 게임방 입장,
  * 실시간 게임 데이터 교환 등의 모든 웹소켓 관련 로직을 처리합니다.
  */
-
 // --- 모듈 임포트 ---
 const { Server } = require('socket.io');  // Socket.IO 서버 클래스
 const jwt = require('jsonwebtoken');      // JWT 검증을 위한 라이브러리
+// --- START: 데이터베이스 및 레이팅 계산 모듈 추가 ---
+const db = require('../config/db'); // 데이터베이스 연결 풀
+const calculateElo = require('./rating'); // Elo 레이팅 계산 서비스
+// --- END: 데이터베이스 및 레이팅 계산 모듈 추가 ---
+
 
 // --- 전역 변수 ---
 let io; // 초기화된 Socket.IO 서버 인스턴스를 저장할 변수
@@ -17,6 +21,64 @@ let io; // 초기화된 Socket.IO 서버 인스턴스를 저장할 변수
 // 특정 유저에게 메시지를 보낼 때 해당 유저의 소켓을 빠르게 찾을 수 있도록 합니다.
 const clients = new Map();
 
+// --- START: 연결 끊김 시 게임 결과를 처리하는 새로운 함수 추가 ---
+/**
+ * 사용자의 연결 끊김으로 인한 게임 결과를 처리하고 DB에 반영합니다.
+ * @param {string} gameId - 게임 ID
+ * @param {string} winnerUserId - 승자(남아있는 사용자)의 ID
+ * @param {string} loserUserId - 패자(연결이 끊긴 사용자)의 ID
+ */
+async function processGameResultOnDisconnect(gameId, winnerUserId, loserUserId) {
+  console.log(`[Disconnect] 게임 결과 처리 시작. GameID: ${gameId}, Winner: ${winnerUserId}, Loser: ${loserUserId}`);
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
+
+    const gameTypeId = 1; // 현재는 테트리스(ID: 1)만 가정
+    
+    // 1. 승자와 패자의 현재 ELO 레이팅 조회
+    const getRatingsQuery = `
+        SELECT user_id, elo_rating FROM user_game_ratings 
+        WHERE game_type_id = $1 AND user_id IN ($2, $3);
+    `;
+    const { rows: ratingRows } = await client.query(getRatingsQuery, [gameTypeId, winnerUserId, loserUserId]);
+
+    const winnerOldRating = ratingRows.find(r => String(r.user_id) === String(winnerUserId))?.elo_rating || 1200;
+    const loserOldRating = ratingRows.find(r => String(r.user_id) === String(loserUserId))?.elo_rating || 1200;
+
+    // 2. 새로운 ELO 레이팅 계산
+    const { winnerNew, loserNew } = calculateElo(winnerOldRating, loserOldRating);
+
+    // 3. 'user_game_ratings' 테이블 업데이트
+    const updateRatingQuery = `UPDATE user_game_ratings SET elo_rating = $1 WHERE user_id = $2 AND game_type_id = $3;`;
+    await client.query(updateRatingQuery, [winnerNew, winnerUserId, gameTypeId]);
+    await client.query(updateRatingQuery, [loserNew, loserUserId, gameTypeId]);
+
+    // 4. 'games' 테이블 업데이트 (상태, 승자, 종료 시간)
+    const updateGameQuery = `UPDATE games SET status = 'finished', winner_user_id = $1, ended_at = now() WHERE game_id = $2;`;
+    await client.query(updateGameQuery, [winnerUserId, gameId]);
+
+    // 5. 'game_participants' 테이블 업데이트 (최종 ELO)
+    // 참고: matchmaking 서비스에서 initial_elo가 포함된 row는 이미 생성되어 있어야 합니다.
+    const updateParticipantQuery = `UPDATE game_participants SET final_elo = $1 WHERE game_id = $2 AND user_id = $3;`;
+    await client.query(updateParticipantQuery, [winnerNew, gameId, winnerUserId]);
+    await client.query(updateParticipantQuery, [loserNew, gameId, loserUserId]);
+
+    await client.query('COMMIT');
+    console.log(`[Disconnect] DB 업데이트 성공. GameID: ${gameId}`);
+    
+    // 6. 남아있는 유저(승자)에게 최종 결과 전송
+    const winnerResult = { oldRating: winnerOldRating, newRating: winnerNew, ratingChange: winnerNew - winnerOldRating };
+    sendMessageToUser(winnerUserId, 'gameResult', winnerResult);
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error(`[Disconnect] 게임 결과 처리 중 오류 발생 (GameID: ${gameId}):`, error);
+  } finally {
+    client.release();
+  }
+}
+// --- END: 연결 끊김 시 게임 결과를 처리하는 새로운 함수 추가 ---
 /**
  * Socket.IO 서버를 초기화하고, 각종 이벤트 리스너를 설정합니다.
  * 이 함수는 메인 서버 파일(index.js)에서 한 번만 호출되어야 합니다.
@@ -144,18 +206,39 @@ function initializeSocket(server) {
     });
 
     // --- 연결 종료 이벤트 리스너 ---
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
       // 디버깅: console.log(`[Socket.IO] 🔌 클라이언트 연결 끊김: User ${userId}, Socket ${socket.id}`);
       clients.delete(userId.toString()); // clients 맵에서 해당 유저 정보 제거
 
       // 만약 유저가 게임방에 참여한 상태였다면, 방에 남아있는 상대방에게 연결이 끊겼음을 알립니다.
       if (socket.gameRoomId) {
-        // 디버깅: console.log(`[Socket] 📢 게임방 #${socket.gameRoomId}에 상대방의 연결 끊김을 알립니다.`);
-        socket.to(socket.gameRoomId).emit('opponentDisconnect');
+        const gameRoomId = socket.gameRoomId;
+        console.log(`[Disconnect] User ${userId}가 게임방 #${gameRoomId}에서 나갔습니다.`);
+        
+        // 1. 방에 남아있는 다른 플레이어를 찾습니다.
+        const room = io.sockets.adapter.rooms.get(gameRoomId);
+        if (room && room.size === 1) {
+            const remainingSocketId = room.values().next().value;
+            const remainingSocket = io.sockets.sockets.get(remainingSocketId);
+            
+            if (remainingSocket && remainingSocket.user) {
+                const winnerId = remainingSocket.user.userId;
+                const loserId = userId; // 연결이 끊긴 유저가 패자
+
+                // 2. 남아있는 플레이어에게 상대방의 연결이 끊겼음을 알립니다. (기존 로직)
+                remainingSocket.emit('opponentDisconnect');
+                
+                // 3. 서버에서 게임 결과를 즉시 처리하고 DB에 반영합니다. (새로운 로직)
+                await processGameResultOnDisconnect(gameRoomId, winnerId, loserId);
+            }
+        } else {
+             // 방에 아무도 남지 않았거나, 2명 이상 남아있는 비정상적인 경우
+            console.log(`[Disconnect] 게임방 #${gameRoomId}에 남아있는 유저가 없거나 비정상 상태입니다.`);
+        }
       }
+      // --- END: 연결 끊김 시 게임 결과 처리 로직 수정 ---
     });
   });
-
   // 디버깅: console.log('✅ Socket.IO server initialized.');
 }
 
