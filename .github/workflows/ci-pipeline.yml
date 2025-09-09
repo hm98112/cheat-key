@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 env:
-  ACR_NAME: tetrisacr
+  ACR_NAME: tetriscampacr
   BACKEND_IMAGE_REPO: tetris-backend
   FRONTEND_IMAGE_REPO: tetris-frontend
   # K8S_MANIFEST_REPO: <Your-GitHub-Org>/<Your-k8s-manifest-repo-name> # ArgoCD가 바라보는 레포
