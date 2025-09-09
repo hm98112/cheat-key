@@ -23,3 +23,17 @@ resource "azurerm_role_assignment" "cicd_kv_secrets_user" {
   role_definition_name = "Key Vault Secrets User"
   principal_id         = azurerm_user_assigned_identity.cicd_identity.principal_id
 }
+
+# 4. CI/CD 관리 ID가 ACR에 이미지를 Push할 수 있도록 'AcrPush' 역할 할당
+resource "azurerm_role_assignment" "cicd_acr_push" {
+  scope                = azurerm_container_registry.acr.id # 권한을 부여할 대상: ACR
+  role_definition_name = "AcrPush"                           # 부여할 역할: 이미지 Push 및 Pull 권한
+  principal_id         = azurerm_user_assigned_identity.cicd_identity.principal_id
+}
+
+# CI/CD 관리 ID가 리소스 그룹의 리소스들을 읽을 수 있도록 'Reader' 역할 할당
+resource "azurerm_role_assignment" "cicd_rg_reader" {
+  scope                = azurerm_resource_group.rg.id # 권한 범위: 리소스 그룹 전체
+  role_definition_name = "Reader"
+  principal_id         = azurerm_user_assigned_identity.cicd_identity.principal_id
+}
