@@ -49,3 +49,54 @@
 
     ``` npm run dev ```  
 - 즐거운 개발 되세요~
+
+
+
+# 가상 머신 네이밍 규칙
+
+## 1. 가상 네트워크 이름 'vnet-프로젝트명'
+    ex) vnet-cheatkey
+
+## 2. 서브 넷 이름 'snet-역할'
+    ex) snet-frontend
+
+## 3. 가상 머신 이름 'vm-역할+번호'
+    ex) vm-frontend01
+- 모두 소문자
+
+## 4. 키 쌍 이름 '역할_key'
+    ex) frontend01_key
+
+## 5. DDos Protection 플랜 'ddos-가상네트워크 이름'
+    ex) ddos-vnet-cheatkey
+
+
+## 가상 네트워크 스펙
+- 리소스 그룹: cheat-key
+- 가상 네트워크 이름: vnet-cheatkey
+- 지역: korea central
+- 보안: 가상 네트워크 암호화 체크 (가상 머신에서 가속화된 네트워킹 사용 설정 필요, 공용 IP에 대한 트래픽은 암호화되지 않음)
+- Azure DDoS 네트워크 보호: 사용
+- DDoS Protection 플랜: 신규 생성(ddos-vnet-cheatkey)
+
+### 서브넷 설정
+- IPv4 주소 범위: 10.0.0.0/16 (65536개)
+- 프론트 엔드: 10.0.1.0/24 (256개)
+- 백 엔드: 10.0.2.0/24 (256개)  
+    프라이빗 서브넷 사용(기본 아웃바운드 액세스 없음)
+
+## 가상 머신 스펙
+- 리소스 그룹: cheat-key
+- 가상 머신 이름:
+ 프론트: vm-frontend01
+ 백: vm-backend01
+- 지역: korea central
+- 가용성 옵션: 인프라 중복이 필요하지 않습니다.
+- 보안 유형: 표준
+- 이미지: Ubuntu Server 22.04 LTS
+- VM 아키텍쳐: x64
+- 크기: Standard_D2s_v5 (2vcpu, 8GiB)
+- 인증 형식: ssh
+- 사용자 이름: cheatadmin
+- SSH 공개 키 원본: 새 키 쌍 생성
+- SSH 키 유형: RSA SSH 형식
