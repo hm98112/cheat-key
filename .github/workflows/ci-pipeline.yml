@@ -8,7 +8,7 @@ on:
 
 permissions:
   id-token: write   # OIDC 로그인을 위해 필수!
-  contents: read
+  contents: write
 
 env:
   ACR_NAME: tetriscampacr
