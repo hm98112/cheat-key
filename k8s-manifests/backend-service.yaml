@@ -1,0 +1,14 @@
+# 백엔드 Pod들에게 안정적인 내부 네트워크 주소를 제공
+apiVersion: v1
+kind: Service
+metadata:
+  name: tetris-backend-service
+spec:
+  # ClusterIP: 클러스터 내부에서만 접근 가능한 주소를 만듦
+  type: ClusterIP
+  selector:
+    app: tetris-backend
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080

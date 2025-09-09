@@ -1,0 +1,14 @@
+# 프론트엔드 Pod들에게 외부에서 접속할 수 있는 공인 IP를 제공
+apiVersion: v1
+kind: Service
+metadata:
+  name: tetris-frontend-service
+spec:
+  # LoadBalancer: Azure의 로드밸런서를 통해 공인 IP를 할당받음
+  type: LoadBalancer
+  selector:
+    app: tetris-frontend
+  ports:
+    - protocol: TCP
+      port: 80 # 외부에서 80번 포트로 들어오는 요청을
+      targetPort: 80 # 컨테이너의 80번 포트로 전달

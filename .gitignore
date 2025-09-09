@@ -1,0 +1,19 @@
+# .gitignore
+
+node_modules/
+package-lock.json
+dist
+
+terraform.tfstate
+.terraform/
+
+terraform.tfvars
+.env
+
+# IDE settings folders
+.vscode/
+.idea/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
