@@ -100,3 +100,49 @@
 - 사용자 이름: cheatadmin
 - SSH 공개 키 원본: 새 키 쌍 생성
 - SSH 키 유형: RSA SSH 형식
+- OS 디스크 크기: 이미지 기본값
+- OS 디스크 유형: 표준 ssd  
+나머지 기본값
+- 네트워킹: vnet-cheatkey
+- 서브넷: snet-frontend/backend
+- 공용 ip : front O / back X
+- NIC 네트워크 보안 그룹: 기본
+- 가속화된 네트워킹 사용 O
+- 부하 분산 옵션
+- 관리: 기본값
+- 모니터링: 부트진단 사용안함
+- 고급: 기본값
+(백엔드는 관리형 스토리지 계정으로 사용하도록 설정(권장)- 직렬콘솔 사용)
+
+
+## NAT(Network Address Translation) 게이트웨이 만들기
+- 리소스 그룹: cheat-key
+- nat 이름: nat-backend
+- 가용성 영역: 없음
+- 공용 IP: pip-nat-backend
+- 서브넷: vnet-cheatkey/ snet-backend
+
+- Route table 만들기
+- rt 이름: rt-backend
+- 경로 추가:
+- 경로 이름 route-backendToPub
+
+
+
+새로운 Azure Database for PostgreSQL 유연한 서버
+서버 이름:psql-cheatkey
+관리자: psadmin
+비밀번호: -------
+
+인증: PostgreSQL 인증만
+네트워킹: 프라이빗 액세스(VNet 통합)
+데이터 암호화 키: 서비스 관리형 키
+
+새 Azure Managed Redis
+이름: redis-cheatkey
+그룹: cheat-key
+지역: korea central
+데이터 계층: 메모리 내(권장)
+        Redis에서 제공하는 고성능 캐시입니다.
+프라이빗 엔드포인트 만들기
+    이름 redisEndPoint
