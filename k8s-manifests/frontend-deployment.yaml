@@ -16,6 +16,6 @@ spec:
       containers:
       - name: frontend-container
         # CI 파이프라인이 ACR에 올린 프론트엔드 이미지를 사용
-        image: tetrisgameacr.azurecr.io/tetris-frontend:1.1.2
+        image: tetriscampacr.azurecr.io/tetris-frontend:1.1.2
         ports:
         - containerPort: 80 # Nginx는 80번 포트를 사용

@@ -16,7 +16,7 @@ spec:
       containers:
       - name: backend-container
         # CI 파이프라인이 ACR에 올린 백엔드 이미지를 사용
-        image: tetrisgameacr.azurecr.io/tetris-backend:1.1.2
+        image: tetriscampacr.azurecr.io/tetris-backend:1.1.2
         ports:
         - containerPort: 8080 # index.js에서 설정한 포트
 

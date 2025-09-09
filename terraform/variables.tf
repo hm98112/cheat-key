@@ -10,7 +10,7 @@ variable "resource_group_location" {
 # 모든 리소스 이름 앞에 붙을 프로젝트 이름
 variable "project_name" {
   type        = string
-  default     = "tetris"
+  default     = "tetris-camp"
   description = "A unique name for the project to prefix resources."
 }
 
