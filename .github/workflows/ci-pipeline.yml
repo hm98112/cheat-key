@@ -31,6 +31,11 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}      # CI/CD용 관리 ID의 클라이언트 ID
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}      # Azure 테넌트 ID
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }} # Azure 구독 ID
+      # 디버깅 단계 추가
+      - name: 'Check ACR permission'
+        run: |
+          echo "Attempting to list repositories in ${{ vars.ACR_NAME }} to verify permissions..."
+          az acr repository list --name ${{ vars.ACR_NAME }} --output table
 
       # 2. 이미지 태그 설정
       - name: Set image tag
