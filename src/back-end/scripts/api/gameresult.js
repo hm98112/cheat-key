@@ -59,8 +59,8 @@ router.post('/result', auth, async (req, res) => { // 게임 결과 처리 API �
     const { rows: ratingRows } = await client.query(ratingQuery, [winnerUserId, loserUserId, gameTypeId]); // 쿼리 실행
     
     // 이제 타입이 일치하므로 정상적으로 ELO 점수를 찾아옵니다.
-    const winnerInitialRating = ratingRows.find(r => r.user_id === winnerUserId)?.elo_rating || 1200; // 승자 기존 ELO
-    const loserInitialRating = ratingRows.find(r => r.user_id === loserUserId)?.elo_rating || 1200; // 패자 기존 ELO
+    const winnerInitialRating = ratingRows.find(r => Number(r.user_id) === winnerUserId)?.elo_rating || 1200; // 승자 기존 ELO
+    const loserInitialRating = ratingRows.find(r => Number(r.user_id) === loserUserId)?.elo_rating || 1200; // 패자 기존 ELO
 
     // 디버깅: console.log(`[ELO PRE] Winner: ${winnerInitialRating}, Loser: ${loserInitialRating}`);
 
