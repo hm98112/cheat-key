@@ -1,29 +1,33 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // useAuth 훅만 사용합니다.
+import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/axiosConfig';
 
 import Loader from '@/components/Loader.jsx';
 import TetrisAnimation from '@/components/TetrisAnimation';
 import TetrisPlayImage from '../components/TetrisPlayImage';
 import InstructionsModal from '../components/InstructionsModal';
+import RankingModal from '../components/RankingModal'; // 랭킹 모달 컴포넌트 import
 import './pages.css';
-
 
 const LobbyPage = () => {
     const [isMatching, setIsMatching] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [elapsedTime, setElapsedTime] = useState(0);
     const [showInstructionsModal, setShowInstructionsModal] = useState(false);
+    
+    // --- START: 랭킹 관련 상태 변수 추가 ---
+    const [showRankingModal, setShowRankingModal] = useState(false);
+    const [rankings, setRankings] = useState([]);
+    const [rankingError, setRankingError] = useState('');
+    // --- END: 랭킹 관련 상태 변수 추가 ---
+
     const intervalRef = useRef(null);
     const navigate = useNavigate();
-    
-    // 1. useAuth 훅을 한 번만 호출하여 필요한 모든 값을 ㅛ   // 1. useAuth 훅을 한 번만 호출하여 필요한 모든 값을 ㅛ가져옵니다.
     const { socket } = useAuth();
 
-    // 2. 소켓 관련 로직은 이 하나의 useEffect에서만 처리합니다.
+    // 소켓 관련 로직 useEffect
     useEffect(() => {
-        // AuthContext가 소켓을 아직 생성하지 않았으면 아무것도 하지 않습니다.
         if (!socket) {
             console.log('[LobbyPage] 소켓을 기다리는 중...');
             return;
@@ -31,7 +35,6 @@ const LobbyPage = () => {
 
         console.log(`[LobbyPage] 전역 소켓을 사용합니다 (ID: ${socket.id})`);
 
-        // 이벤트 핸들러를 외부 함수로 분리하여 .off()에서 참조할 수 있도록 합니다.
         const handleMatchSuccess = (data) => {
             console.log('[Socket.IO] 매칭 성공!', data);
             setIsMatching(false);
@@ -39,18 +42,15 @@ const LobbyPage = () => {
             navigate(`/tetris/${gameId}`);
         };
 
-        // 전역 소켓에 이벤트 리스너를 등록합니다.
         socket.on('matchSuccess', handleMatchSuccess);
 
-        // 클린업(Cleanup) 함수: LobbyPage를 떠날 때 실행됩니다.
         return () => {
             console.log('[LobbyPage] 클린업: matchSuccess 리스너를 제거합니다.');
-            // ★ 중요: disconnect()가 아니라, 이 페이지에서 등록한 이벤트 리스너만 제거합니다.
             socket.off('matchSuccess', handleMatchSuccess);
         };
-    }, [socket, navigate]); // socket 객체가 준비되면 이 useEffect가 실행됩니다.
+    }, [socket, navigate]);
 
-    // 매칭 경과 시간 타이머 useEffect (변경 없음)
+    // 매칭 경과 시간 타이머 useEffect
     useEffect(() => {
         if (isMatching) {
             intervalRef.current = setInterval(() => {
@@ -63,12 +63,11 @@ const LobbyPage = () => {
         return () => clearInterval(intervalRef.current);
     }, [isMatching]);
 
-
+    // '매칭하기' 버튼 핸들러
     const handleMatchingClick = async () => {
         setIsMatching(true);
         setErrorMessage('');
         try {
-            // 매칭 요청 시, 서버는 이미 소켓을 통해 사용자를 알고 있습니다.
             await apiClient.post('/matchmaking/queue', { gameTypeId: 1 });
         } catch (error) {
             console.error("매칭 시작 실패:", error);
@@ -77,11 +76,27 @@ const LobbyPage = () => {
         }
     };
 
+    // '매칭 취소' 버튼 핸들러
     const handleCancelMatching = async () => {
         setIsMatching(false);
         // TODO: 백엔드에 매칭 취소 API 호출
         console.log("매칭이 취소되었습니다.");
     };
+
+    // --- START: '랭킹 보기' 버튼 핸들러 추가 ---
+    const handleRankingClick = async () => {
+        try {
+            setRankingError(''); // 이전 에러 메시지 초기화
+            const response = await apiClient.get('/ranking');
+            setRankings(response.data);
+            setShowRankingModal(true); // 모달 띄우기
+        } catch (error) {
+            console.error("랭킹 조회 실패:", error);
+            setRankingError('랭킹을 불러오는 데 실패했습니다. 잠시 후 다시 시도해 주세요.');
+            setShowRankingModal(true); // 에러가 발생해도 모달은 띄워서 메시지를 보여줍니다.
+        }
+    };
+    // --- END: '랭킹 보기' 버튼 핸들러 추가 ---
 
     return (
         <div className="main-container">
@@ -99,9 +114,14 @@ const LobbyPage = () => {
                 ) : (
                     <div className="lobby-content">
                         <TetrisPlayImage />
-                        <button className="main-button login" onClick={handleMatchingClick}>
-                            매칭하기
-                        </button>
+                        <div className="lobby-button-group">
+                            <button className="main-button login" onClick={handleMatchingClick}>
+                                매칭하기
+                            </button>
+                            <button className="main-button secondary" onClick={handleRankingClick}>
+                                랭킹 보기
+                            </button>
+                        </div>
                         {errorMessage && <p style={{ color: 'red', marginTop: '1rem' }}>{errorMessage}</p>}
                     </div>
                 )}
@@ -112,9 +132,18 @@ const LobbyPage = () => {
                 </button>
             </div>
             {showInstructionsModal && <InstructionsModal onClose={() => setShowInstructionsModal(false)} />}
+            
+            {/* --- START: 랭킹 모달 렌더링 추가 --- */}
+            {showRankingModal && (
+                <RankingModal
+                    rankings={rankings}
+                    error={rankingError}
+                    onClose={() => setShowRankingModal(false)}
+                />
+            )}
+            {/* --- END: 랭킹 모달 렌더링 추가 --- */}
         </div>
     );
 };
 
 export default LobbyPage;
-

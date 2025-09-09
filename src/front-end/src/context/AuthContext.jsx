@@ -16,9 +16,11 @@ export const AuthProvider = ({ children }) => {
         
         if (accessToken && storedUsername && storedUserId) {
             setUser({ username: storedUsername, userId: storedUserId });
-
-            // 2. 새로운 소켓을 생성하고 state를 업데이트합니다.
-            const newSocket = io('http://localhost:8080', {
+            
+            // Vite 환경 변수(import.meta.env)를 사용하여 API 서버 주소를 가져옵니다.
+            const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+            
+            const newSocket = io(API_URL, {
                 auth: {
                     token: accessToken
                 }
