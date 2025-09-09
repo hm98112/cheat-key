@@ -31,11 +31,12 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}      # CI/CD용 관리 ID의 클라이언트 ID
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}      # Azure 테넌트 ID
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }} # Azure 구독 ID
+          
       # 디버깅 단계 추가
       - name: 'Check ACR permission'
         run: |
-          echo "Attempting to list repositories in ${{ env.ACR_NAME }} to verify permissions..."
-          az acr repository list --name ${{ env.ACR_NAME }} --output table
+          echo "Attempting to list repositories in tetriscampacr to verify permissions..."
+          az acr repository list --name tetriscampacr --output table
 
       # 2. 이미지 태그 설정
       - name: Set image tag
@@ -48,7 +49,7 @@ jobs:
       - name: Login to Azure Container Registry
         uses: azure/docker-login@v1
         with:
-          login-server: ${{ env.ACR_NAME }}.azurecr.io
+          login-server: tetriscampacr.azurecr.io
 
       # 4. 백엔드/프론트엔드 이미지 빌드 및 푸시 (기존과 동일)
       - name: Build and push backend image
