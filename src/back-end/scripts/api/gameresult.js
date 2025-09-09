@@ -51,16 +51,19 @@ router.post('/result', auth, async (req, res) => { // 게임 결과 처리 API �
     // 2-2. ELO 레이팅 계산 및 업데이트
     const loserUserId = participantUserIds.find(id => id !== winnerUserId); // 패자 ID 추출
 
-    const ratingQuery = `
-      SELECT user_id, elo_rating
-      FROM user_game_ratings
-      WHERE user_id IN ($1, $2) AND game_type_id = $3;
-    `; // 두 유저의 기존 ELO 점수 조회 쿼리
-    const { rows: ratingRows } = await client.query(ratingQuery, [winnerUserId, loserUserId, gameTypeId]); // 쿼리 실행
-    
-    // 이제 타입이 일치하므로 정상적으로 ELO 점수를 찾아옵니다.
-    const winnerInitialRating = ratingRows.find(r => Number(r.user_id) === winnerUserId)?.elo_rating || 1200; // 승자 기존 ELO
-    const loserInitialRating = ratingRows.find(r => Number(r.user_id) === loserUserId)?.elo_rating || 1200; // 패자 기존 ELO
+    // game_participants 테이블에서 initial_elo 조회 쿼리 추가
+    // 이 테이블은 매치메이킹 시점에 이미 두 플레이어의 ELO를 기록해두었으므로,
+    // 이 값을 사용하면 user_game_ratings에 ELO 기록이 없는 경우를 안전하게 처리할 수 있습니다.
+    const initialEloQuery = `
+      SELECT user_id, initial_elo
+      FROM game_participants
+      WHERE game_id = $1 AND user_id IN ($2, $3);
+    `;
+
+    const { rows: participantRows } = await client.query(initialEloQuery, [gameId, winnerUserId, loserUserId]);
+
+    const winnerInitialRating = participantRows.find(p => Number(p.user_id) === winnerUserId)?.initial_elo || 1200;
+    const loserInitialRating = participantRows.find(p => Number(p.user_id) === loserUserId)?.initial_elo || 1200;
 
     // 디버깅: console.log(`[ELO PRE] Winner: ${winnerInitialRating}, Loser: ${loserInitialRating}`);
 

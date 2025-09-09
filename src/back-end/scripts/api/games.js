@@ -72,8 +72,8 @@ router.post('/result', auth, async (req, res) => {
         `;
         const { rows: ratingRows } = await client.query(getRatingsQuery, [gameTypeId, winnerUserId, loserUserId]);
 
-        const winnerOldRating = ratingRows.find(r => r.user_id === winnerUserId)?.elo_rating || 1200;
-        const loserOldRating = ratingRows.find(r => r.user_id === loserUserId)?.elo_rating || 1200;
+        const winnerOldRating = ratingRows.find(r => Number(r.user_id) === winnerUserId)?.elo_rating || 1200;
+        const loserOldRating = ratingRows.find(r => Number(r.user_id) === Number(loserUserId))?.elo_rating;
 
         // 2. 순수한 '계산기'인 rating.js를 호출하여 새 점수를 계산합니다.
         const { winnerNew, loserNew } = calculateElo(winnerOldRating, loserOldRating);
@@ -90,9 +90,9 @@ router.post('/result', auth, async (req, res) => {
         await client.query(updateGameQuery, [winnerUserId, endedAt, gameId]);
 
         // 5. 'game_participants' 테이블에 ELO 변화를 기록합니다.
-        const insertParticipantQuery = `INSERT INTO game_participants (game_id, user_id, initial_elo, final_elo) VALUES ($1, $2, $3, $4);`;
-        await client.query(insertParticipantQuery, [gameId, winnerUserId, winnerOldRating, winnerNew]);
-        await client.query(insertParticipantQuery, [gameId, loserUserId, loserOldRating, loserNew]);
+        const insertParticipantQuery = `UPDATE game_participants SET final_elo = $3 WHERE game_id = $1 AND user_id = $2;`;
+        await client.query(insertParticipantQuery, [gameId, winnerUserId, winnerNew]);
+        await client.query(insertParticipantQuery, [gameId, loserUserId, loserNew]);
 
         await client.query('COMMIT'); // --- 트랜잭션 커밋 ---
         // 타입을 문자열로 변환하여 비교

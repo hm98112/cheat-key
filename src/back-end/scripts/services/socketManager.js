@@ -43,8 +43,10 @@ async function processGameResultOnDisconnect(gameId, winnerUserId, loserUserId) 
     `;
     const { rows: ratingRows } = await client.query(getRatingsQuery, [gameTypeId, winnerUserId, loserUserId]);
 
-    const winnerOldRating = ratingRows.find(r => String(r.user_id) === String(winnerUserId))?.elo_rating || 1200;
-    const loserOldRating = ratingRows.find(r => String(r.user_id) === String(loserUserId))?.elo_rating || 1200;
+    const winnerOldRating = ratingRows.find(r => String(r.user_id) === String(winnerUserId))?.elo_rating;
+    const loserOldRating = ratingRows.find(r => String(r.user_id) === String(loserUserId))?.elo_rating;
+
+    console.log(`[Disconnect] 현재 ELO 조회 - 승자: ${winnerOldRating}, 패자: ${loserOldRating}`);
 
     // 2. 새로운 ELO 레이팅 계산
     const { winnerNew, loserNew } = calculateElo(winnerOldRating, loserOldRating);
