@@ -1,0 +1,80 @@
+# 백엔드 애플리케이션을 어떻게 실행할지 정의 (Key Vault 연동)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tetris-backend
+spec:
+  replicas: 2 # 안정성을 위해 2개를 실행
+  selector:
+    matchLabels:
+      app: tetris-backend
+  template:
+    metadata:
+      labels:
+        app: tetris-backend
+    spec:
+      containers:
+      - name: backend-container
+        # CI 파이프라인이 ACR에 올린 백엔드 이미지를 사용
+        image: tetrisgameacr.azurecr.io/tetris-backend:1.1.2
+        ports:
+        - containerPort: 8080 # index.js에서 설정한 포트
+
+        # 1) 비밀 정보를 환경 변수로 주입 
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets # 아래 nodePublishSecretRef에서 정의한 Secret 이름
+              key: postgresql-url
+        - name: REDIS_HOST
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: redis-host
+        - name: REDIS_PASS
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: redis-pass
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: jwt-secret
+        - name: REFRESH_TOKEN_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: refresh-token-secret
+
+        # 2) 비밀 정보가 담긴 볼륨을 컨테이너에 마운트
+        volumeMounts:
+        - name: secrets-store-volume
+          mountPath: "/mnt/secrets-store"
+          readOnly: true
+        
+        # 컨테이너 health check 설정
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+
+      # 3) CSI Driver를 통해 Key Vault 비밀을 가져오는 볼륨 정의
+      volumes:
+        - name: secrets-store-volume
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "azure-kv-tetris-secrets"
+            nodePublishSecretRef:
+              name: app-secrets
