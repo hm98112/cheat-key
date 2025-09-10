@@ -16,7 +16,7 @@
     COPY src/front-end/ ./src/front-end/
     
     # 프론트엔드 프로젝트를 지정하여 빌드 실행
-    RUN npm run build --prefix src/front-end
+    RUN npm run build --workspace=front-end
     
     # --- 2. 프로덕션 스테이지 ---
     FROM nginx:stable-alpine
