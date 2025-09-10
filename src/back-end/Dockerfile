@@ -1,5 +1,5 @@
 # 1. 베이스 이미지 설정
-FROM node:18-alpine
+FROM node:20-alpine
 
 # 2. 전체 빌드를 위한 작업 디렉토리 설정
 WORKDIR /app
