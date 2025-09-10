@@ -1,35 +1,22 @@
-# Node.js 공식 이미지 사용
+# 1. 베이스 이미지 설정
 FROM node:18-alpine
 
-# 작업 디렉토리 설정
+# 2. 작업 디렉토리 설정
 WORKDIR /app
 
-# 패키지 파일들을 먼저 복사 (Docker 캐시 최적화)
-COPY package.json package-lock.json ./
+# 3. 의존성 파일 먼저 복사 (빌드 캐시 활용)
+# 컨텍스트가 루트이므로 'back-end/' 경로를 명시해야 합니다.
+COPY back-end/package.json back-end/package-lock.json ./
 
-# 의존성 설치 (npm ci 사용)
-RUN npm ci --only=production && npm cache clean --force
+# 4. 프로덕션용 의존성만 설치
+RUN npm ci --only=production
 
-# 애플리케이션 코드 복사
-COPY . .
+# 5. 나머지 소스 코드 복사
+# 'back-end/' 디렉토리의 모든 내용을 컨테이너의 /app 디렉토리로 복사합니다.
+COPY back-end/ .
 
-# 비root 사용자 생성 및 권한 설정 (보안)
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    chown -R nodejs:nodejs /app
+# 6. 애플리케이션 실행 포트 노출 (실제 사용하는 포트로 변경하세요)
+EXPOSE 3000
 
-USER nodejs
-
-# 포트 노출
-EXPOSE 8080
-
-# 환경 변수 기본값 설정
-ENV NODE_ENV=production
-ENV PORT=8080
-
-# Health check 추가
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/healthz || exit 1
-
-# 애플리케이션 실행
-CMD ["npm", "start"]
+# 7. 컨테이너 시작 명령어
+CMD [ "node", "index.js" ]
