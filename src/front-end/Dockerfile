@@ -1,44 +1,33 @@
-# 멀티 스테이지 빌드: 1단계 - 빌드 환경
+# --- 1. 빌드 스테이지 (Build Stage) ---
 FROM node:18-alpine AS builder
 
+# 작업 디렉토리 설정
 WORKDIR /app
 
-# 패키지 파일들 복사
-COPY package*.json ./
+# 의존성 파일 먼저 복사
+COPY front-end/package.json front-end/package-lock.json ./
 
-# 의존성 설치 (package-lock.json 유무에 따라 분기)
-RUN if [ -f package-lock.json ]; then \
-        npm ci; \
-    else \
-        npm install; \
-    fi
+# 모든 의존성 설치 (빌드에는 devDependencies가 필요할 수 있음)
+RUN npm ci
 
-# 소스 코드 복사
-COPY . .
+# 나머지 소스 코드 복사
+COPY front-end/ .
 
-# 프론트엔드 빌드
+# React 앱 빌드
 RUN npm run build
 
-# 2단계 - 운영 환경 (Nginx)
-FROM nginx:alpine
+# --- 2. 프로덕션 스테이지 (Production Stage) ---
+FROM nginx:stable-alpine
 
-# 기본 Nginx 설정 파일 삭제
-RUN rm -rf /usr/share/nginx/html/*
-
-# 빌드된 파일들을 Nginx html 디렉토리로 복사
+# 빌드 스테이지에서 생성된 정적 파일들을 Nginx의 기본 경로로 복사
+# /app/dist 는 Vite의 기본 빌드 결과물 경로입니다.
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Nginx 설정 파일 복사 (기본 설정 위치로 변경)
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# 커스텀 Nginx 설정 파일 복사 (SPA 라우팅 처리를 위해 필요)
+COPY front-end/nginx.conf /etc/nginx/conf.d/default.conf
 
-# 포트 노출
+# Nginx 기본 포트 80 노출
 EXPOSE 80
-
-# Health check 추가 (alpine에 wget 설치)
-RUN apk add --no-cache wget
-
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1
 
 # Nginx 실행
 CMD ["nginx", "-g", "daemon off;"]
