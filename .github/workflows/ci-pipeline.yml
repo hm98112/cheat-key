@@ -44,6 +44,8 @@ jobs:
         run: |
           echo "Logging into ACR: ${{ env.ACR_NAME }}"
           az acr login --name ${{ env.ACR_NAME }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       # 4. 이미지 태그 설정
       - name: Set image tag
@@ -59,22 +61,27 @@ jobs:
           echo "Checking repositories in ${{ env.ACR_NAME }}..."
           az acr repository list --name ${{ env.ACR_NAME }} --output table || echo "No repositories found (this is normal for new ACR)"
 
-      # 6. 백엔드 이미지 빌드 및 푸시
+      # 6. 백엔드 이미지 빌드 및 푸시 (개선안)
       - name: Build and push backend image
-        run: |
-          echo "Building backend image..."
-          docker build ./src/back-end -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
-          echo "Pushing backend image..."
-          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
-          
-      # 7. 프론트엔드 이미지 빌드 및 푸시
-      - name: Build and push frontend image
-        run: |
-          echo "Building frontend image..."
-          docker build ./src/front-end -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
-          echo "Pushing frontend image..."
-          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./src/back-end/Dockerfile
+          push: true
+          tags: ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
+      # 7. 프론트엔드 이미지 빌드 및 푸시 (개선안)
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./src/front-end/Dockerfile
+          push: true
+          tags: ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       # 8. K8s Manifest 파일의 이미지 태그 업데이트
       - name: Update image tag in Kubernetes manifest
         run: |
