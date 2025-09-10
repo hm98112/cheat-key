@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: tetris-backend
+  namespace: tetris-app # 이 줄을 추가
 spec:
   replicas: 2 # 안정성을 위해 2개를 실행
   selector:
