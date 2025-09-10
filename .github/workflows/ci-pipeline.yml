@@ -11,10 +11,9 @@ permissions:
   contents: write
 
 env:
-  ACR_NAME: tetriscampacr
+  ACR_NAME: tetriscampacr  # Terraform output에서 확인한 실제 ACR 이름
   BACKEND_IMAGE_REPO: tetris-backend
   FRONTEND_IMAGE_REPO: tetris-frontend
-  # K8S_MANIFEST_REPO: <Your-GitHub-Org>/<Your-k8s-manifest-repo-name> # ArgoCD가 바라보는 레포
 
 jobs:
   build-and-push:
@@ -24,54 +23,87 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      # 1. AZURE_CREDENTIALS 대신 OIDC 방식으로 Azure에 로그인 (더 안전!)
+      # 1. OIDC 방식으로 Azure에 로그인
       - name: 'Log in to Azure'
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
-          client-id: b72c4d27-0017-4737-a271-24d5bddd18d2
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}      # Azure 테넌트 ID
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }} # Azure 구독 ID
-          
-      # 디버깅 단계 추가
-      - name: 'Check ACR permission'
-        run: |
-          echo "Attempting to list repositories in tetriscampacr to verify permissions..."
-          az acr repository list --name tetriscampacr --output table
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # 2. 이미지 태그 설정
+      # 2. 로그인 성공 확인
+      - name: Verify Azure Login
+        run: |
+          echo "Current subscription:"
+          az account show --output table
+          echo "Available ACRs:"
+          az acr list --output table
+          
+      # 3. ACR에 로그인
+      - name: Login to Azure Container Registry
+        run: |
+          echo "Logging into ACR: ${{ env.ACR_NAME }}"
+          az acr login --name ${{ env.ACR_NAME }}
+
+      # 4. 이미지 태그 설정
       - name: Set image tag
         id: set-image-tag
         run: |
           IMAGE_TAG=$(cat VERSION)
           echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_OUTPUT
-      
-      # 3. ACR에 로그인
-      - name: Login to Azure Container Registry
-        uses: azure/docker-login@v1
-        with:
-          login-server: tetriscampacr.azurecr.io
+          echo "Using image tag: ${IMAGE_TAG}"
+          
+      # 5. ACR 접근 권한 확인 (디버깅용)
+      - name: 'Check ACR permission'
+        run: |
+          echo "Checking repositories in ${{ env.ACR_NAME }}..."
+          az acr repository list --name ${{ env.ACR_NAME }} --output table || echo "No repositories found (this is normal for new ACR)"
 
-      # 4. 백엔드/프론트엔드 이미지 빌드 및 푸시 (기존과 동일)
+      # 6. 백엔드 이미지 빌드 및 푸시
       - name: Build and push backend image
         run: |
+          echo "Building backend image..."
           docker build ./src/back-end -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
+          echo "Pushing backend image..."
           docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
+          
+      # 7. 프론트엔드 이미지 빌드 및 푸시
       - name: Build and push frontend image
         run: |
+          echo "Building frontend image..."
           docker build ./src/front-end -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
+          echo "Pushing frontend image..."
           docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
 
-      # 5. [핵심] K8s Manifest 파일의 이미지 태그 업데이트 후 Git Push
-      #    (복잡한 kubectl, az 명령어 대신 ArgoCD가 배포하도록 유도)
+      # 8. K8s Manifest 파일의 이미지 태그 업데이트
       - name: Update image tag in Kubernetes manifest
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
-          # sed 명령어로 backend-deployment.yaml 파일의 이미지 태그를 새 버전으로 교체
+          echo "Current backend image in manifest:"
+          grep "image:" k8s-manifests/backend-deployment.yaml
+          
+          echo "Current frontend image in manifest:"
+          grep "image:" k8s-manifests/frontend-deployment.yaml
+          
+          # sed 명령어로 deployment.yaml 파일의 이미지 태그를 새 버전으로 교체
           sed -i "s|image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:.*|image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}|g" k8s-manifests/backend-deployment.yaml
           sed -i "s|image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:.*|image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}|g" k8s-manifests/frontend-deployment.yaml
           
-          # 변경된 내용을 Git에 커밋하고 푸시
-          git commit -am "chore(ci): Update image tags to ${{ steps.set-image-tag.outputs.IMAGE_TAG }}"
-          git push
+          echo "Updated backend image in manifest:"
+          grep "image:" k8s-manifests/backend-deployment.yaml
+          
+          echo "Updated frontend image in manifest:"
+          grep "image:" k8s-manifests/frontend-deployment.yaml
+          
+          # 변경사항이 있는지 확인
+          if git diff --quiet; then
+            echo "No changes to commit"
+          else
+            echo "Committing changes..."
+            git add k8s-manifests/
+            git commit -m "chore(ci): Update image tags to ${{ steps.set-image-tag.outputs.IMAGE_TAG }}"
+            git push
+            echo "Changes committed and pushed"
+          fi
