@@ -1,24 +1,35 @@
-# Node.js 백엔드 Dockerfile
+# Node.js 공식 이미지 사용
 FROM node:18-alpine
 
 # 작업 디렉토리 설정
 WORKDIR /app
 
-# package.json과 package-lock.json을 먼저 복사
+# 패키지 파일들을 먼저 복사 (Docker 캐시 최적화)
 COPY package.json package-lock.json ./
 
-# 의존성 설치
+# 의존성 설치 (npm ci 사용)
 RUN npm ci --only=production && npm cache clean --force
 
 # 애플리케이션 코드 복사
 COPY . .
 
-# 환경변수 설정
-ENV NODE_ENV=production
-ENV PORT=8080
+# 비root 사용자 생성 및 권한 설정 (보안)
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /app
+
+USER nodejs
 
 # 포트 노출
 EXPOSE 8080
 
+# 환경 변수 기본값 설정
+ENV NODE_ENV=production
+ENV PORT=8080
+
+# Health check 추가
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/healthz || exit 1
+
 # 애플리케이션 실행
-CMD ["node", "index.js"]
+CMD ["npm", "start"]
