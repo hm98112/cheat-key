@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: tetris-backend
+  namespace: tetris-app # 이 줄을 추가
 spec:
   replicas: 2 # 안정성을 위해 2개를 실행
   selector:
@@ -16,7 +17,7 @@ spec:
       containers:
       - name: backend-container
         # CI 파이프라인이 ACR에 올린 백엔드 이미지를 사용
-        image: tetrisgameacr.azurecr.io/tetris-backend:1.1.2
+        image: tetriscampacr.azurecr.io/tetris-backend:1.3.0
         ports:
         - containerPort: 8080 # index.js에서 설정한 포트
 

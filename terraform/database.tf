@@ -9,7 +9,7 @@ resource "azurerm_postgresql_flexible_server" "psql" {
   # 관리자 계정 정보
   administrator_login    = "psqladmin"
   administrator_password = var.postgresql_admin_password # 변수를 통해 암호 전달
-
+  zone                   = "1"
   # 서버 사양 (SKU)
   sku_name   = "B_Standard_B1ms"
   storage_mb = 32768 # 32GB 스토리지
@@ -26,7 +26,7 @@ resource "azurerm_postgresql_flexible_server" "psql" {
 
 # 2. PostgreSQL 데이터베이스 생성
 resource "azurerm_postgresql_flexible_server_database" "db" {
-  name      = "tetrisgamedb"
+  name      = "tetriscampdb"
   server_id = azurerm_postgresql_flexible_server.psql.id # 위에서 만든 서버에 속하도록 지정
   collation = "en_US.utf8"
   charset   = "utf8"

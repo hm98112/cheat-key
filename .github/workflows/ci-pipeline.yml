@@ -1,214 +1,117 @@
-# Workflow 이름
-name: Build and Push Frontend & Backend Images
+name: Build and Push Docker Images
 
-# Github 레포지토리의 main 브랜치의 VERSION 파일이 수정되었을 때 워크플로우 실행
 on:
   push:
     branches: [ main ]
     paths:
       - 'VERSION'
 
-# 워크플로우가 Git에 다시 Push할 수 있도록 권한 부여
 permissions:
+  id-token: write   # OIDC 로그인을 위해 필수!
   contents: write
 
-# 환경변수 정의
 env:
-  ACR_NAME: tetrisgameacr
+  ACR_NAME: tetriscampacr  # Terraform output에서 확인한 실제 ACR 이름
   BACKEND_IMAGE_REPO: tetris-backend
   FRONTEND_IMAGE_REPO: tetris-frontend
-  RESOURCE_GROUP: tetrisgame-rg
-  AKS_CLUSTER: tetrisgame-aks
 
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
     
     steps:
-      # 1. 소스 코드 체크아웃
       - name: Checkout source code
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.PAT }}
 
-      # 2. Azure CLI 로그인
-      - name: Azure Login
-        uses: azure/login@v1
+      # 1. OIDC 방식으로 Azure에 로그인
+      - name: 'Log in to Azure'
+        uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # 3. 이미지 태그 설정 (공용 VERSION 파일 사용)
+      # 2. 로그인 성공 확인
+      - name: Verify Azure Login
+        run: |
+          echo "Current subscription:"
+          az account show --output table
+          echo "Available ACRs:"
+          az acr list --output table
+          
+      # 3. ACR에 로그인
+      - name: Login to Azure Container Registry
+        run: |
+          echo "Logging into ACR: ${{ env.ACR_NAME }}"
+          az acr login --name ${{ env.ACR_NAME }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 4. 이미지 태그 설정
       - name: Set image tag
         id: set-image-tag
         run: |
           IMAGE_TAG=$(cat VERSION)
-          if [ -z "$IMAGE_TAG" ]; then
-            echo "Error: VERSION file is empty or does not exist."
-            exit 1
-          fi
           echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_OUTPUT
-      
-      # 4. ACR에 로그인
-      - name: Login to Azure Container Registry
-        uses: azure/docker-login@v1
-        with:
-          login-server: ${{ env.ACR_NAME }}.azurecr.io
-          username: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
-          password: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}
+          echo "Using image tag: ${IMAGE_TAG}"
+          
+      # 5. ACR 접근 권한 확인 (디버깅용)
+      - name: 'Check ACR permission'
+        run: |
+          echo "Checking repositories in ${{ env.ACR_NAME }}..."
+          az acr repository list --name ${{ env.ACR_NAME }} --output table || echo "No repositories found (this is normal for new ACR)"
 
-      # 5-1. 백엔드 Docker 이미지 빌드 및 푸시
+      # 6. 백엔드 이미지 빌드 및 푸시
       - name: Build and push backend image
-        run: |
-          docker build ./src/back-end -f ./src/back-end/Dockerfile -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
-          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
-
-      # 5-2. 프론트엔드 Docker 이미지 빌드 및 푸시
-      - name: Build and push frontend image
-        run: |
-          docker build ./src/front-end -f ./src/front-end/Dockerfile -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
-          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
-
-      # 6. AKS 클러스터 연결
-      - name: Set up AKS context
-        uses: azure/aks-set-context@v3
+        uses: docker/build-push-action@v5
         with:
-          resource-group: ${{ env.RESOURCE_GROUP }}
-          cluster-name: ${{ env.AKS_CLUSTER }}
+          context: .
+          file: ./src/back-end/Dockerfile
+          push: true
+          tags: ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      # 7. Key Vault 및 AKS Identity 정보 수집
-      - name: Collect Azure resource information
-        id: collect-info
-        run: |
-          # AKS Key Vault Secrets Provider Identity 정보
-          IDENTITY_CLIENT_ID=$(az aks show -g ${{ env.RESOURCE_GROUP }} -n ${{ env.AKS_CLUSTER }} --query addonProfiles.azureKeyvaultSecretsProvider.identity.clientId -o tsv)
-          IDENTITY_OBJECT_ID=$(az aks show -g ${{ env.RESOURCE_GROUP }} -n ${{ env.AKS_CLUSTER }} --query addonProfiles.azureKeyvaultSecretsProvider.identity.objectId -o tsv)
+      # 7. 프론트엔드 이미지 빌드 및 푸시
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./src/front-end/Dockerfile
+          push: true
+          tags: ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           
-          # Key Vault 정보
-          KEY_VAULT_NAME=$(az keyvault list -g ${{ env.RESOURCE_GROUP }} --query '[0].name' -o tsv)
-          KEY_VAULT_ID=$(az keyvault show -n $KEY_VAULT_NAME -g ${{ env.RESOURCE_GROUP }} --query id -o tsv)
-          
-          # 테넌트 ID
-          TENANT_ID=$(az account show --query tenantId -o tsv)
-          
-          # GitHub Actions 출력으로 설정
-          echo "IDENTITY_CLIENT_ID=${IDENTITY_CLIENT_ID}" >> $GITHUB_OUTPUT
-          echo "IDENTITY_OBJECT_ID=${IDENTITY_OBJECT_ID}" >> $GITHUB_OUTPUT
-          echo "KEY_VAULT_NAME=${KEY_VAULT_NAME}" >> $GITHUB_OUTPUT
-          echo "KEY_VAULT_ID=${KEY_VAULT_ID}" >> $GITHUB_OUTPUT
-          echo "TENANT_ID=${TENANT_ID}" >> $GITHUB_OUTPUT
-          
-          echo "✅ 수집된 정보:"
-          echo "  - Identity Client ID: ${IDENTITY_CLIENT_ID}"
-          echo "  - Key Vault Name: ${KEY_VAULT_NAME}"
-          echo "  - Tenant ID: ${TENANT_ID}"
-
-      # 8. Key Vault 권한 설정
-      - name: Set Key Vault permissions
-        run: |
-          # Key Vault Secrets User 역할 확인
-          EXISTING_ROLE=$(az role assignment list \
-            --assignee ${{ steps.collect-info.outputs.IDENTITY_OBJECT_ID }} \
-            --scope ${{ steps.collect-info.outputs.KEY_VAULT_ID }} \
-            --query "[?roleDefinitionName=='Key Vault Secrets User'].roleDefinitionName" -o tsv)
-          
-          if [ -z "$EXISTING_ROLE" ]; then
-            echo "⚠️  Key Vault 권한이 없습니다. 권한을 부여합니다..."
-            az role assignment create \
-              --role "Key Vault Secrets User" \
-              --assignee ${{ steps.collect-info.outputs.IDENTITY_OBJECT_ID }} \
-              --scope ${{ steps.collect-info.outputs.KEY_VAULT_ID }}
-            echo "✅ Key Vault 권한 부여 완료!"
-          else
-            echo "✅ Key Vault 권한이 이미 설정되어 있습니다."
-          fi
-
-      # 9. SecretProviderClass 자동 생성 및 배포
-      - name: Generate and deploy SecretProviderClass
-        run: |
-          # SecretProviderClass YAML 파일 생성
-          cat > k8s-manifests/secret-provider-class.yaml << EOF
-          apiVersion: secrets-store.csi.x-k8s.io/v1
-          kind: SecretProviderClass
-          metadata:
-            name: azure-kv-tetris-secrets
-            namespace: default
-          spec:
-            provider: azure
-            parameters:
-              usePodIdentity: "false"
-              useVMManagedIdentity: "true"
-              userAssignedIdentityID: "${{ steps.collect-info.outputs.IDENTITY_CLIENT_ID }}"
-              keyvaultName: "${{ steps.collect-info.outputs.KEY_VAULT_NAME }}"
-              tenantId: "${{ steps.collect-info.outputs.TENANT_ID }}"
-              objects: |
-                array:
-                  - |
-                    objectName: postgresql-url
-                    objectType: secret
-                    objectAlias: postgresql-url
-                  - |
-                    objectName: redis-host
-                    objectType: secret
-                    objectAlias: redis-host
-                  - |
-                    objectName: redis-pass
-                    objectType: secret
-                    objectAlias: redis-pass
-                  - |
-                    objectName: jwt-secret
-                    objectType: secret
-                    objectAlias: jwt-secret
-                  - |
-                    objectName: refresh-token-secret
-                    objectType: secret
-                    objectAlias: refresh-token-secret
-            secretObjects:
-            - secretName: app-secrets
-              type: Opaque
-              data:
-              - objectName: postgresql-url
-                key: postgresql-url
-              - objectName: redis-host
-                key: redis-host
-              - objectName: redis-pass
-                key: redis-pass
-              - objectName: jwt-secret
-                key: jwt-secret
-              - objectName: refresh-token-secret
-                key: refresh-token-secret
-          EOF
-          
-          echo "✅ SecretProviderClass YAML 파일이 생성되었습니다!"
-          
-          # Kubernetes에 적용
-          kubectl apply -f k8s-manifests/secret-provider-class.yaml
-          echo "✅ SecretProviderClass가 Kubernetes에 배포되었습니다!"
-
-      # 10. Git 설정 및 YAML 파일들 업데이트
-      - name: Update Kubernetes manifests
+      # 8. K8s Manifest 파일의 이미지 태그 업데이트
+      - name: Update image tag in Kubernetes manifest
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
-          # 이미지 태그 업데이트
+          echo "Current backend image in manifest:"
+          grep "image:" k8s-manifests/backend-deployment.yaml
+          
+          echo "Current frontend image in manifest:"
+          grep "image:" k8s-manifests/frontend-deployment.yaml
+          
+          # sed 명령어로 deployment.yaml 파일의 이미지 태그를 새 버전으로 교체
           sed -i "s|image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:.*|image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}|g" k8s-manifests/backend-deployment.yaml
           sed -i "s|image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:.*|image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE_REPO }}:${{ steps.set-image-tag.outputs.IMAGE_TAG }}|g" k8s-manifests/frontend-deployment.yaml
-
-      # 11. 변경된 YAML 파일들을 main 브랜치에 다시 Push
-      - name: Commit and push manifest changes
-        run: |
-          git add k8s-manifests/secret-provider-class.yaml
-          git diff --quiet || (git commit -am "chore(ci): Update image tags to ${{ steps.set-image-tag.outputs.IMAGE_TAG }} and SecretProviderClass" && git push)
-
-      # 12. 배포 상태 확인
-      - name: Verify deployment
-        run: |
-          echo "🔍 배포 상태 확인 중..."
           
-          # SecretProviderClass 상태 확인
-          kubectl describe secretproviderclass azure-kv-tetris-secrets || echo "⚠️ SecretProviderClass 확인 실패"
+          echo "Updated backend image in manifest:"
+          grep "image:" k8s-manifests/backend-deployment.yaml
           
-          # Key Vault Secrets Store CSI Driver Pod 상태 확인
-          kubectl get pods -n kube-system -l app=secrets-store-csi-driver || echo "⚠️ CSI Driver Pod 확인 실패"
+          echo "Updated frontend image in manifest:"
+          grep "image:" k8s-manifests/frontend-deployment.yaml
           
-          echo "✅ 배포 완료! ArgoCD에서 애플리케이션 동기화를 확인하세요."
+          # 변경사항이 있는지 확인
+          if git diff --quiet; then
+            echo "No changes to commit"
+          else
+            echo "Committing changes..."
+            git add k8s-manifests/
+            git commit -m "chore(ci): Update image tags to ${{ steps.set-image-tag.outputs.IMAGE_TAG }}"
+            git push
+            echo "Changes committed and pushed"
+          fi

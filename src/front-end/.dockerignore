@@ -1,0 +1,16 @@
+# npm이 설치하는 의존성 폴더
+node_modules
+
+# 빌드 결과물 폴더
+dist
+build
+
+# 로컬 환경 변수 파일
+.env*
+
+# Git 관련 파일
+.git
+.gitignore
+
+# OS 관련 파일
+.DS_Store

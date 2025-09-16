@@ -3,11 +3,14 @@
   "version": "1.0.0",
   "description": "Root controller for the cheat-key project",
   "private": true,
+  "workspaces": [
+    "src/front-end",
+    "src/back-end"
+  ],
   "scripts": {
-    "dev:frontend": "cd src/front-end && npm run dev",
-    "dev:backend": "cd src/back-end && npm run dev",
-    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
-    "i": "npm i && cd src/front-end && npm install && cd ../back-end && npm install"
+    "dev:frontend": "npm run dev --workspace=front-end",
+    "dev:backend": "npm run dev --workspace=back-end",
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\""
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
