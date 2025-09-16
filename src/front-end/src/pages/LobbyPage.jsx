@@ -7,6 +7,7 @@ import Loader from '@/components/Loader.jsx';
 import TetrisAnimation from '@/components/TetrisAnimation';
 import TetrisPlayImage from '../components/TetrisPlayImage';
 import InstructionsModal from '../components/InstructionsModal';
+import RankingModal from '../components/RankingModal'; // 랭킹 모달 컴포넌트 import
 import './pages.css';
 
 
@@ -15,6 +16,13 @@ const LobbyPage = () => {
     const [errorMessage, setErrorMessage] = useState('');
     const [elapsedTime, setElapsedTime] = useState(0);
     const [showInstructionsModal, setShowInstructionsModal] = useState(false);
+    
+     // 랭킹 관련 상태 변수들
+    const [showRankingModal, setShowRankingModal] = useState(false);
+    const [rankings, setRankings] = useState([]);
+    const [rankingError, setRankingError] = useState('');
+    const [isRankingLoading, setIsRankingLoading] = useState(false); // 로딩 상태 추가
+    
     const intervalRef = useRef(null);
     const navigate = useNavigate();
     
@@ -77,10 +85,37 @@ const LobbyPage = () => {
         }
     };
 
+
+    // '매칭 취소' 버튼 핸들러
     const handleCancelMatching = async () => {
-        setIsMatching(false);
-        // TODO: 백엔드에 매칭 취소 API 호출
-        console.log("매칭이 취소되었습니다.");
+        try {
+            await apiClient.delete('/matchmaking/queue', { 
+                data: { gameTypeId: 1 }
+            });
+            console.log("매칭이 성공적으로 취소되었습니다.");
+            setIsMatching(false);
+        } catch (error) {
+            console.error("매칭 취소 실패:", error);
+            setErrorMessage(error.response?.data?.message || '매칭 취소를 처리하는 중 오류가 발생했습니다.');
+        }
+    };
+
+
+
+    // '랭킹 보기' 버튼 핸들러
+    const handleRankingClick = async () => {
+        setIsRankingLoading(true); // 로딩 시작
+        setRankingError('');
+        setShowRankingModal(true); // 모달을 즉시 띄웁니다.
+        try {
+            const response = await apiClient.get('/ranking');
+            setRankings(response.data);
+        } catch (error) {
+            console.error("랭킹 조회 실패:", error);
+            setRankingError('랭킹을 불러오는 데 실패했습니다. 잠시 후 다시 시도해 주세요.');
+        } finally {
+            setIsRankingLoading(false); // 로딩 종료
+        }
     };
 
     return (
@@ -99,9 +134,14 @@ const LobbyPage = () => {
                 ) : (
                     <div className="lobby-content">
                         <TetrisPlayImage />
-                        <button className="main-button login" onClick={handleMatchingClick}>
-                            매칭하기
-                        </button>
+                        <div className="lobby-button-group">
+                            <button className="main-button login" onClick={handleMatchingClick}>
+                                매칭하기
+                            </button>
+                            <button className="main-button secondary" onClick={handleRankingClick}>
+                                랭킹 보기
+                            </button>
+                        </div>
                         {errorMessage && <p style={{ color: 'red', marginTop: '1rem' }}>{errorMessage}</p>}
                     </div>
                 )}
@@ -112,9 +152,17 @@ const LobbyPage = () => {
                 </button>
             </div>
             {showInstructionsModal && <InstructionsModal onClose={() => setShowInstructionsModal(false)} />}
+            
+            {showRankingModal && (
+                <RankingModal
+                    rankings={rankings}
+                    error={rankingError}
+                    isLoading={isRankingLoading} // 로딩 상태를 props로 전달
+                    onClose={() => setShowRankingModal(false)}
+                />
+            )}
         </div>
     );
 };
 
 export default LobbyPage;
-

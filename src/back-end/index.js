@@ -18,6 +18,7 @@ const { initializeSocket } = require('./scripts/services/socketManager'); // [�
 const { startMatchmaking } = require('./scripts/services/matchmaking'); // [추가] 매치메이킹 서비스
 const gameResultRouter = require('./scripts/api/gameresult'); 
 const gamesRouter = require('./scripts/api/games');
+const rankingRouter = require('./scripts/api/ranking'); // 랭킹 라우터 임포트
 
 
 // Express 애플리케이션 생성
@@ -27,6 +28,11 @@ const server = http.createServer(app); // [수정] Express 앱으로 http 서버
 // 미들웨어 설정
 app.use(cors({  origin: "http://localhost:5173", credentials: true, }));
 app.use(express.json());
+
+app.use((req, res, next) => {
+    console.log(`[Universal Logger] 시간: ${new Date().toISOString()}, 요청 경로: ${req.originalUrl}, 메서드: ${req.method}`);
+    next(); // 다음 미들웨어 또는 라우터로 요청을 전달합니다.
+});
 
 
 // 서버 시작 시 .env 변수가 제대로 로드되었는지 확인하는 진단 코드
@@ -45,9 +51,14 @@ app.use('/api/auth', authRouter);
 app.use('/api/matchmaking', matchmakingRouter);
 app.use('/api/games', gamesRouter);
 app.use('/api/game', gameResultRouter); 
+app.use('/api/ranking', rankingRouter); // 랭킹 라우터 등록
 
-// [추가] 생성된 HTTP 서버에 Socket.IO 서버를 연결하여 초기화합니다.
+
+// 생성된 HTTP 서버에 Socket.IO 서버를 연결하여 초기화합니다.
 initializeSocket(server);
+server.on('request', (req, res) => {
+    console.log(`[HTTP Server Request] 시간: ${new Date().toISOString()}, 요청 URL: ${req.url}, 메서드: ${req.method}`);
+});
 
 // --- 서버 실행 ---
 // .env 파일에 PORT가 지정되어 있으면 그 값을 사용하고, 없으면 기본값으로 8080을 사용합니다.
