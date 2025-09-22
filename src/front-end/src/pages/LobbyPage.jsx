@@ -16,16 +16,24 @@ const LobbyPage = () => {
     const [elapsedTime, setElapsedTime] = useState(0);
     const [showInstructionsModal, setShowInstructionsModal] = useState(false);
     
-    // --- START: 랭킹 관련 상태 변수 추가 ---
+    // 랭킹 관련 상태 변수들
     const [showRankingModal, setShowRankingModal] = useState(false);
     const [rankings, setRankings] = useState([]);
     const [rankingError, setRankingError] = useState('');
-    // --- END: 랭킹 관련 상태 변수 추가 ---
+    const [isRankingLoading, setIsRankingLoading] = useState(false); // 로딩 상태 추가
 
     const intervalRef = useRef(null);
     const navigate = useNavigate();
     const { socket } = useAuth();
 
+    // 경합 조건 방지를 위한 ref 추가 
+    // 이유: useEffect의 클로저(closure) 환경에서도 항상 최신 isMatching 상태를 참조하기 위함
+    //       이를 통해 소켓 이벤트 핸들러가 오래된 상태 값을 사용하는 것을 방지합
+    const isMatchingRef = useRef(isMatching);
+    useEffect(() => {
+        isMatchingRef.current = isMatching;
+    }, [isMatching]);
+    
     // 소켓 관련 로직 useEffect
     useEffect(() => {
         if (!socket) {
@@ -36,6 +44,10 @@ const LobbyPage = () => {
         console.log(`[LobbyPage] 전역 소켓을 사용합니다 (ID: ${socket.id})`);
 
         const handleMatchSuccess = (data) => {
+            if (!isMatchingRef.current) {
+                console.log('[Socket.IO] 매칭 성공 이벤트를 받았으나, 사용자가 이미 취소하여 무시합니다.');
+                return;
+            }
             console.log('[Socket.IO] 매칭 성공!', data);
             setIsMatching(false);
             const { gameId } = data;
@@ -78,25 +90,33 @@ const LobbyPage = () => {
 
     // '매칭 취소' 버튼 핸들러
     const handleCancelMatching = async () => {
-        setIsMatching(false);
-        // TODO: 백엔드에 매칭 취소 API 호출
-        console.log("매칭이 취소되었습니다.");
+        try {
+            await apiClient.delete('/matchmaking/queue', { 
+                data: { gameTypeId: 1 }
+            });
+            console.log("매칭이 성공적으로 취소되었습니다.");
+            setIsMatching(false);
+        } catch (error) {
+            console.error("매칭 취소 실패:", error);
+            setErrorMessage(error.response?.data?.message || '매칭 취소를 처리하는 중 오류가 발생했습니다.');
+        }
     };
 
-    // --- START: '랭킹 보기' 버튼 핸들러 추가 ---
+    // '랭킹 보기' 버튼 핸들러
     const handleRankingClick = async () => {
+        setIsRankingLoading(true); // 로딩 시작
+        setRankingError('');
+        setShowRankingModal(true); // 모달을 즉시 띄웁니다.
         try {
-            setRankingError(''); // 이전 에러 메시지 초기화
             const response = await apiClient.get('/ranking');
             setRankings(response.data);
-            setShowRankingModal(true); // 모달 띄우기
         } catch (error) {
             console.error("랭킹 조회 실패:", error);
             setRankingError('랭킹을 불러오는 데 실패했습니다. 잠시 후 다시 시도해 주세요.');
-            setShowRankingModal(true); // 에러가 발생해도 모달은 띄워서 메시지를 보여줍니다.
+        } finally {
+            setIsRankingLoading(false); // 로딩 종료
         }
     };
-    // --- END: '랭킹 보기' 버튼 핸들러 추가 ---
 
     return (
         <div className="main-container">
@@ -133,15 +153,14 @@ const LobbyPage = () => {
             </div>
             {showInstructionsModal && <InstructionsModal onClose={() => setShowInstructionsModal(false)} />}
             
-            {/* --- START: 랭킹 모달 렌더링 추가 --- */}
             {showRankingModal && (
                 <RankingModal
                     rankings={rankings}
                     error={rankingError}
+                    isLoading={isRankingLoading} // 로딩 상태를 props로 전달
                     onClose={() => setShowRankingModal(false)}
                 />
             )}
-            {/* --- END: 랭킹 모달 렌더링 추가 --- */}
         </div>
     );
 };

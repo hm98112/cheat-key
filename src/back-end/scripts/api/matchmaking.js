@@ -63,6 +63,40 @@ router.post('/queue', auth, async (req, res) => {
     res.status(500).json({ message: '서버에서 오류가 발생했습니다.' });
   }
 });
+/**
+ * @route   DELETE /api/matchmaking/queue
+ * @desc    사용자를 특정 게임의 매칭 대기열에서 제거합니다.
+ * @access  Private (로그인한 유저만 접근 가능)
+ * @body    {number} gameTypeId - 취소를 원하는 게임의 종류 ID
+ */
+router.delete('/queue', auth, async (req, res) => {
+  // 1. 요청 정보 추출
+  const { gameTypeId } = req.body;
+  const userId = req.user.userId;
+
+  if (!gameTypeId) {
+    return res.status(400).json({ message: 'gameTypeId가 필요합니다.' });
+  }
+
+  try {
+    // 2. Redis Sorted Set에서 사용자 제거
+    const queueKey = `matchmaking_queue:game_type:${gameTypeId}`;
+    const result = await redisClient.zRem(queueKey, String(userId));
+
+    if (result > 0) {
+      console.log(`[Matchmaking] 사용자 ${userId}를 Redis 대기열(${queueKey})에서 제거했습니다.`);
+      res.status(200).json({ message: '매칭 대기열에서 정상적으로 나왔습니다.' });
+    } else {
+      console.log(`[Matchmaking] 사용자 ${userId}가 대기열(${queueKey})에 없거나 이미 제거되었습니다. (정상 처리)`);
+      res.status(200).json({ message: '사용자가 대기열에 없어 취소가 완료된 것으로 간주합니다.' });
+    }
+
+  } catch (error) {
+    console.error('매칭 대기열 제거 중 오류 발생:', error);
+    res.status(500).json({ message: '서버에서 오류가 발생했습니다.' });
+  }
+});
+// 매칭 취소 API 추가
 
 // 설정이 완료된 라우터 객체를 모듈로 내보냅니다.
 module.exports = router;

@@ -8,8 +8,6 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import Header from './components/Header';
-import Header from './components/Header';
-
 import MainPage from './pages/MainPage';
 import SigninPage from './pages/SigninPage';
 import SignupPage from './pages/SignupPage';

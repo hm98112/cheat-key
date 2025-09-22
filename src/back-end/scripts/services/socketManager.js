@@ -11,7 +11,9 @@ const jwt = require('jsonwebtoken');      // JWT 검증을 위한 라이브러�
 const db = require('../config/db'); // 데이터베이스 연결 풀
 const calculateElo = require('./rating'); // Elo 레이팅 계산 서비스
 // --- END: 데이터베이스 및 레이팅 계산 모듈 추가 ---
-
+// 이유: disconnect 핸들러에서 Redis 대기열에 접근해야 하므로, redisClient가 필요합니다.
+const redisClient = require('../config/redis'); 
+// --- END: redisClient 임포트 추가 ---
 
 // --- 전역 변수 ---
 let io; // 초기화된 Socket.IO 서버 인스턴스를 저장할 변수
@@ -116,7 +118,7 @@ function initializeSocket(server) {
 
   // --- 메인 이벤트 핸들러: 'connection' ---
   // 인증된 클라이언트가 성공적으로 연결되었을 때 실행됩니다.
-  io.on('connection', (socket) => {
+  io.on('connection', async (socket) => {
     // 방어 로직: 미들웨어를 통과했더라도 user 정보가 확실히 있는지 확인
     if (!socket.user || !socket.user.userId) {
         // 디버깅: console.error('[Socket.IO] ❌ 연결 거부: 인증 후 유저 정보가 없습니다.');
@@ -128,6 +130,17 @@ function initializeSocket(server) {
     
     // clients 맵에 현재 연결된 유저의 소켓 정보를 저장합니다.
     clients.set(userId.toString(), socket);
+
+    try {
+        const gameTypeId = 1; // 현재는 테트리스(ID: 1)만 가정
+        const queueKey = `matchmaking_queue:game_type:${gameTypeId}`;
+        const result = await redisClient.zRem(queueKey, String(userId));
+        if (result > 0) {
+            console.log(`[Connection Cleanup] 이전 세션에서 남아있던 사용자 ${userId}를 대기열(${queueKey})에서 제거했습니다.`);
+        }
+    } catch (error) {
+        console.error(`[Connection Cleanup] 대기열에서 사용자 ${userId} 청소 중 오류 발생:`, error);
+    }
 
     // --- 게임방 관련 이벤트 리스너 ---
   
@@ -234,11 +247,20 @@ function initializeSocket(server) {
                 await processGameResultOnDisconnect(gameRoomId, winnerId, loserId);
             }
         } else {
-             // 방에 아무도 남지 않았거나, 2명 이상 남아있는 비정상적인 경우
-            console.log(`[Disconnect] 게임방 #${gameRoomId}에 남아있는 유저가 없거나 비정상 상태입니다.`);
+             try {
+            const gameTypeId = 1; // 현재는 테트리스(ID: 1)만 가정
+            const queueKey = `matchmaking_queue:game_type:${gameTypeId}`;
+            const result = await redisClient.zRem(queueKey, String(userId));
+
+            // zRem의 결과가 1 이상이면 해당 유저가 대기열에 있다가 성공적으로 제거된 것입니다.
+            if (result > 0) {
+                console.log(`[Disconnect] 매칭 대기 중이던 사용자 ${userId}를 대기열(${queueKey})에서 제거했습니다.`);
+            }
+        } catch (error) {
+            console.error(`[Disconnect] 대기열에서 사용자 ${userId} 제거 중 오류 발생:`, error);
         }
-      }
-      // --- END: 연결 끊김 시 게임 결과 처리 로직 수정 ---
+       }
+      }// --- END: 연결 끊김 시 게임 결과 처리 로직 수정 ---
     });
   });
   // 디버깅: console.log('✅ Socket.IO server initialized.');
@@ -268,5 +290,5 @@ function sendMessageToUser(userId, eventName, data) {
 module.exports = {
   initializeSocket,
   sendMessageToUser,
+  clients,
 };
-
